@@ -1,0 +1,22 @@
+{
+  "name": "monitoring-bot",
+  "version": "1.0.0",
+  "description": "Telegram monitoring bot for Juice Protocol events",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "tsx src/index.ts",
+    "dev": "tsx watch src/index.ts"
+  },
+  "dependencies": {
+    "graphql-request": "^6.1.0",
+    "graphql": "^16.0.0",
+    "dotenv": "^17.0.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.7.0",
+    "typescript": "^5.9.0",
+    "@types/node": "^24.0.0"
+  }
+}

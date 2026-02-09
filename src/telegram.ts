@@ -1,0 +1,83 @@
+import type { Alert } from "./types.js";
+
+const TELEGRAM_API = "https://api.telegram.org";
+const MAX_RETRIES = 3;
+const RETRY_BASE_MS = 1000;
+const MAX_MESSAGE_LENGTH = 4096;
+// Telegram rate limit: ~30 messages per second to a group
+const SEND_DELAY_MS = 100;
+
+function truncateMessage(text: string): string {
+  if (text.length <= MAX_MESSAGE_LENGTH) return text;
+  return text.slice(0, MAX_MESSAGE_LENGTH - 15) + "\n\n[truncated]";
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export async function sendTelegramMessage(
+  botToken: string,
+  chatId: string,
+  text: string
+): Promise<boolean> {
+  const url = `${TELEGRAM_API}/bot${botToken}/sendMessage`;
+
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: truncateMessage(text),
+          parse_mode: "HTML",
+          disable_web_page_preview: true,
+        }),
+      });
+
+      if (res.ok) return true;
+
+      // Rate limited
+      if (res.status === 429) {
+        const body = (await res.json()) as { parameters?: { retry_after?: number } };
+        const retryAfter = body.parameters?.retry_after || 5;
+        console.warn(`[telegram] Rate limited, retrying after ${retryAfter}s`);
+        await sleep(retryAfter * 1000);
+        continue;
+      }
+
+      const errText = await res.text();
+      console.error(`[telegram] Send failed (${res.status}): ${errText}`);
+    } catch (err) {
+      console.error(`[telegram] Send error (attempt ${attempt + 1}):`, err);
+    }
+
+    if (attempt < MAX_RETRIES - 1) {
+      const delay = RETRY_BASE_MS * Math.pow(2, attempt);
+      await sleep(delay);
+    }
+  }
+
+  return false;
+}
+
+export async function sendAlerts(
+  botToken: string,
+  chatId: string,
+  alerts: Alert[]
+): Promise<number> {
+  let failures = 0;
+  for (const alert of alerts) {
+    const success = await sendTelegramMessage(botToken, chatId, alert.message);
+    if (!success) {
+      console.error(`[telegram] Failed to send ${alert.tier} alert for ${alert.eventType}`);
+      failures++;
+    }
+    // Small delay between messages to avoid rate limiting
+    if (alerts.length > 1) {
+      await sleep(SEND_DELAY_MS);
+    }
+  }
+  return failures;
+}
