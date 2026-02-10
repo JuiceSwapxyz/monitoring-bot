@@ -109,6 +109,7 @@ describe("pollJuiceDollar — general patterns", () => {
     const result = await pollJuiceDollar(client, makeWatermarks(), EXPLORER);
     expect(result.alerts).toEqual([]);
     expect(result.watermarkUpdates).toEqual({});
+    expect(result.queryFailures).toBe(0);
   });
 
   it("advances watermark to LAST item's timestamp with multiple items", async () => {
@@ -137,6 +138,7 @@ describe("pollJuiceDollar — general patterns", () => {
     const result = await pollJuiceDollar(client, makeWatermarks(), EXPLORER);
     // Should complete — no minter alerts but no crash
     expect(result.watermarkUpdates.minterApplication).toBeUndefined();
+    expect(result.queryFailures).toBe(1);
   });
 
   it("handles all queries erroring without crash", async () => {
@@ -147,5 +149,6 @@ describe("pollJuiceDollar — general patterns", () => {
     const result = await pollJuiceDollar(client, makeWatermarks(), EXPLORER);
     expect(result.alerts).toEqual([]);
     expect(result.watermarkUpdates).toEqual({});
+    expect(result.queryFailures).toBe(13);
   });
 });
