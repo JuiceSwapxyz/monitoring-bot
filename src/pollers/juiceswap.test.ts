@@ -63,7 +63,7 @@ describe("pollJuiceSwap — governor resolved", () => {
     const result = await pollJuiceSwap(client, makeWatermarks(), EXPLORER);
     expect(result.alerts).toHaveLength(1);
     expect(result.alerts[0].eventType).toBe("governorProposalExecuted");
-    expect(result.alerts[0].tier).toBe("IMPORTANT");
+    expect(result.alerts[0].silent).toBe(false);
     expect(result.watermarkUpdates.governorProposalExecuted).toBe("200");
     expect(result.watermarkUpdates.governorProposalVetoed).toBe("200");
   });

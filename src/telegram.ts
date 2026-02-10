@@ -21,7 +21,8 @@ function sleep(ms: number): Promise<void> {
 export async function sendTelegramMessage(
   botToken: string,
   chatId: string,
-  text: string
+  text: string,
+  silent: boolean = false
 ): Promise<boolean> {
   const url = `${TELEGRAM_API}/bot${botToken}/sendMessage`;
 
@@ -37,6 +38,7 @@ export async function sendTelegramMessage(
           text: truncateMessage(text),
           parse_mode: "HTML",
           disable_web_page_preview: true,
+          disable_notification: silent,
         }),
         signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
       });
@@ -80,9 +82,9 @@ export async function sendAlerts(
 ): Promise<number> {
   let failures = 0;
   for (const alert of alerts) {
-    const success = await sendTelegramMessage(botToken, chatId, alert.message);
+    const success = await sendTelegramMessage(botToken, chatId, alert.message, alert.silent);
     if (!success) {
-      console.error(`[telegram] Failed to send ${alert.tier} alert for ${alert.eventType}`);
+      console.error(`[telegram] Failed to send alert for ${alert.eventType}`);
       failures++;
     }
     // Small delay between messages to avoid rate limiting

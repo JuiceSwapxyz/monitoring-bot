@@ -113,7 +113,7 @@ async function main() {
     `JuiceSwap: ${config.juiceswapGraphqlUrl}\n` +
     `JuiceDollar: ${config.juicedollarGraphqlUrl}\n` +
     `Poll interval: ${config.pollIntervalMs / 1000}s`;
-  await sendTelegramMessage(config.telegramBotToken, config.telegramChatId, startupMsg);
+  await sendTelegramMessage(config.telegramBotToken, config.telegramChatId, startupMsg, true);
 
   while (running) {
     const cycleStart = Date.now();
@@ -152,12 +152,8 @@ async function main() {
       Object.assign(watermarks, dollarResult.watermarkUpdates);
     }
 
-    // Sort: URGENT first, then IMPORTANT
-    const tierOrder: Record<string, number> = { URGENT: 0, IMPORTANT: 1 };
-    allAlerts.sort((a, b) => tierOrder[a.tier] - tierOrder[b.tier]);
-
     if (allAlerts.length > 0) {
-      console.log(`[monitor] Sending ${allAlerts.length} alerts (${allAlerts.filter((a) => a.tier === "URGENT").length} urgent)`);
+      console.log(`[monitor] Sending ${allAlerts.length} alerts`);
       const failures = await sendAlerts(config.telegramBotToken, config.telegramChatId, allAlerts);
       health.alertsSent += allAlerts.length;
       health.errors.telegram += failures;
