@@ -142,21 +142,32 @@ async function main() {
       health.lastSuccessfulPoll = Date.now();
     }
 
-    // Collect alerts and watermark updates
+    // Collect alerts and pending watermark updates (don't mutate watermarks yet)
+    const pendingWatermarkUpdates: Partial<Record<EventType, string>> = {};
     if (swapResult) {
       allAlerts.push(...swapResult.alerts);
-      Object.assign(watermarks, swapResult.watermarkUpdates);
+      Object.assign(pendingWatermarkUpdates, swapResult.watermarkUpdates);
     }
     if (dollarResult) {
       allAlerts.push(...dollarResult.alerts);
-      Object.assign(watermarks, dollarResult.watermarkUpdates);
+      Object.assign(pendingWatermarkUpdates, dollarResult.watermarkUpdates);
     }
 
+    // Send alerts and only advance watermarks for event types with zero failures
+    let failedEventTypes = new Set<string>();
     if (allAlerts.length > 0) {
       console.log(`[monitor] Sending ${allAlerts.length} alerts`);
-      const failures = await sendAlerts(config.telegramBotToken, config.telegramChatId, allAlerts);
-      health.alertsSent += allAlerts.length - failures;
-      health.errors.telegram += failures;
+      const result = await sendAlerts(config.telegramBotToken, config.telegramChatId, allAlerts);
+      failedEventTypes = result.failedEventTypes;
+      health.alertsSent += allAlerts.length - result.failures;
+      health.errors.telegram += result.failures;
+    }
+
+    // Apply only watermark updates for event types that had no delivery failures
+    for (const [eventType, value] of Object.entries(pendingWatermarkUpdates)) {
+      if (!failedEventTypes.has(eventType)) {
+        watermarks[eventType as EventType] = value;
+      }
     }
 
     // Save watermarks every cycle, not just when alerts exist

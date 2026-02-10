@@ -191,8 +191,9 @@ describe("sendAlerts", () => {
 
     const promise = sendAlerts("token", "chat", alerts);
     await vi.advanceTimersByTimeAsync(60_000);
-    const failures = await promise;
+    const result = await promise;
 
-    expect(failures).toBe(1);
+    expect(result.failures).toBe(1);
+    expect(result.failedEventTypes).toEqual(new Set(["governorProposalExecuted"]));
   });
 });

@@ -72,22 +72,29 @@ export async function sendTelegramMessage(
   return false;
 }
 
+export interface SendResult {
+  failures: number;
+  failedEventTypes: Set<string>;
+}
+
 export async function sendAlerts(
   botToken: string,
   chatId: string,
   alerts: Alert[]
-): Promise<number> {
+): Promise<SendResult> {
   let failures = 0;
+  const failedEventTypes = new Set<string>();
   for (const alert of alerts) {
     const success = await sendTelegramMessage(botToken, chatId, alert.message, alert.silent);
     if (!success) {
       console.error(`[telegram] Failed to send alert for ${alert.eventType}`);
       failures++;
+      failedEventTypes.add(alert.eventType);
     }
     // Small delay between messages to avoid rate limiting
     if (alerts.length > 1) {
       await sleep(SEND_DELAY_MS);
     }
   }
-  return failures;
+  return { failures, failedEventTypes };
 }
