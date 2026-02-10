@@ -20,7 +20,14 @@ cp .env.example .env  # fill in values
 | `POLL_INTERVAL_MS` | No | `30000` | Polling interval in ms (min: 1000) |
 | `CITREA_EXPLORER_URL` | No | `https://citreascan.com` | Block explorer base URL for tx links |
 | `WATERMARK_PATH` | No | `.watermarks.json` | File path for event watermark persistence |
-| `INIT_MODE` | No | `now` | `now` = start from current time, `genesis` = process all historical events |
+
+## First Run Behavior
+
+On first run (no watermark file), the bot automatically catches up on all historical events by logging them to the console only — no Telegram messages are sent during catch-up. Watermarks are saved after each catch-up cycle for crash resilience. Once caught up, the bot sends a Telegram startup message and enters live monitoring.
+
+On subsequent restarts (watermark file exists), the bot loads watermarks and enters live monitoring immediately. Any events missed while the bot was offline are sent to Telegram as normal.
+
+If the watermark file is corrupted, it is backed up to `.watermarks.json.bak` and the bot treats it as a first run.
 
 ## Running
 
@@ -92,7 +99,7 @@ src/
   index.ts              Main polling loop
   config.ts             Environment variable loading and validation
   types.ts              Shared TypeScript types
-  watermark.ts          Watermark persistence (tracks last-seen event timestamps)
+  watermark.ts          Watermark persistence (tracks last-seen event timestamps, detects first run)
   telegram.ts           Telegram message delivery
   graphql/
     client.ts           GraphQL client factory

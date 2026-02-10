@@ -31,7 +31,6 @@ export function loadConfig(): Config {
       "https://citreascan.com"
     ),
     watermarkPath: optionalEnv("WATERMARK_PATH", ".watermarks.json"),
-    initMode: validateInitMode(optionalEnv("INIT_MODE", "now")),
   };
 }
 
@@ -41,11 +40,4 @@ function validatePollInterval(value: string): number {
     throw new Error(`Invalid POLL_INTERVAL_MS: "${value}". Must be a number >= 1000.`);
   }
   return ms;
-}
-
-function validateInitMode(value: string): "now" | "genesis" {
-  if (value !== "now" && value !== "genesis") {
-    throw new Error(`Invalid INIT_MODE: "${value}". Must be "now" or "genesis".`);
-  }
-  return value;
 }

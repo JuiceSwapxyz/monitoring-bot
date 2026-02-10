@@ -33,6 +33,11 @@ export type EventType =
 // Watermark state
 export type Watermarks = Record<EventType, string>;
 
+export interface WatermarkLoadResult {
+  watermarks: Watermarks;
+  isFirstRun: boolean;
+}
+
 // Config
 export interface Config {
   telegramBotToken: string;
@@ -42,7 +47,6 @@ export interface Config {
   pollIntervalMs: number;
   citreaExplorerUrl: string;
   watermarkPath: string;
-  initMode: "now" | "genesis";
 }
 
 // Poll result from a poller

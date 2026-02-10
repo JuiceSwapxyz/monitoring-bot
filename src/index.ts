@@ -5,7 +5,7 @@ import { pollJuiceSwap } from "./pollers/juiceswap.js";
 import { pollJuiceDollar } from "./pollers/juicedollar.js";
 import { sendAlerts, sendTelegramMessage } from "./telegram.js";
 import { createHealthStats, logHealthIfDue } from "./health.js";
-import type { Alert } from "./types.js";
+import type { Alert, EventType } from "./types.js";
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -18,13 +18,92 @@ async function main() {
   console.log(`[monitor] JuiceSwap:    ${config.juiceswapGraphqlUrl}`);
   console.log(`[monitor] JuiceDollar:  ${config.juicedollarGraphqlUrl}`);
   console.log(`[monitor] Poll interval: ${config.pollIntervalMs}ms`);
-  console.log(`[monitor] Init mode:     ${config.initMode}`);
 
   const juiceswapClient = createClient(config.juiceswapGraphqlUrl);
   const juicedollarClient = createClient(config.juicedollarGraphqlUrl);
 
-  let watermarks = await loadWatermarks(config.watermarkPath, config.initMode);
+  // Graceful shutdown — registered before catch-up so Ctrl+C works during catch-up
+  let running = true;
+  const shutdown = () => {
+    console.log("\n[monitor] Shutting down...");
+    running = false;
+  };
+  process.on("SIGINT", shutdown);
+  process.on("SIGTERM", shutdown);
+
+  const { watermarks, isFirstRun } = await loadWatermarks(config.watermarkPath);
   console.log("[monitor] Watermarks loaded");
+
+  // Catch-up phase: on first run, poll all history and log to console only
+  if (isFirstRun) {
+    console.log("[catchup] First run detected — catching up on historical events...");
+    let cycleNum = 0;
+    let totalEvents = 0;
+    const totalByType: Partial<Record<EventType, number>> = {};
+
+    while (running) {
+      cycleNum++;
+      const allAlerts: Alert[] = [];
+
+      const [swapResult, dollarResult] = await Promise.all([
+        pollJuiceSwap(juiceswapClient, watermarks, config.citreaExplorerUrl).catch(
+          (err) => {
+            console.error("[catchup] JuiceSwap poll failed:", err instanceof Error ? err.message : err);
+            return null;
+          }
+        ),
+        pollJuiceDollar(juicedollarClient, watermarks, config.citreaExplorerUrl).catch(
+          (err) => {
+            console.error("[catchup] JuiceDollar poll failed:", err instanceof Error ? err.message : err);
+            return null;
+          }
+        ),
+      ]);
+
+      if (swapResult) {
+        allAlerts.push(...swapResult.alerts);
+        Object.assign(watermarks, swapResult.watermarkUpdates);
+      }
+      if (dollarResult) {
+        allAlerts.push(...dollarResult.alerts);
+        Object.assign(watermarks, dollarResult.watermarkUpdates);
+      }
+
+      if (allAlerts.length === 0) break;
+
+      // Tally counts per event type
+      for (const alert of allAlerts) {
+        totalByType[alert.eventType] = (totalByType[alert.eventType] || 0) + 1;
+      }
+      totalEvents += allAlerts.length;
+
+      console.log(`[catchup] Cycle ${cycleNum}: ${allAlerts.length} events processed`);
+
+      // Save watermarks after each cycle for crash resilience
+      try {
+        await saveWatermarks(config.watermarkPath, watermarks);
+      } catch (err) {
+        console.error("[catchup] Failed to save watermarks:", err instanceof Error ? err.message : err);
+      }
+    }
+
+    if (totalEvents > 0) {
+      console.log(`[catchup] Complete: ${totalEvents} historical events across ${cycleNum - 1} cycles`);
+      console.log("[catchup] Breakdown:");
+      for (const [eventType, count] of Object.entries(totalByType)) {
+        console.log(`  ${eventType}: ${count}`);
+      }
+    } else {
+      console.log("[catchup] Complete: no historical events found");
+    }
+  }
+
+  // If shut down during catch-up, save and exit early
+  if (!running) {
+    await saveWatermarks(config.watermarkPath, watermarks);
+    console.log("[monitor] Goodbye.");
+    return;
+  }
 
   const health = createHealthStats();
 
@@ -33,18 +112,8 @@ async function main() {
     `<b>Juice Monitor Started</b>\n\n` +
     `JuiceSwap: ${config.juiceswapGraphqlUrl}\n` +
     `JuiceDollar: ${config.juicedollarGraphqlUrl}\n` +
-    `Poll interval: ${config.pollIntervalMs / 1000}s\n` +
-    `Init mode: ${config.initMode}`;
+    `Poll interval: ${config.pollIntervalMs / 1000}s`;
   await sendTelegramMessage(config.telegramBotToken, config.telegramChatId, startupMsg);
-
-  // Graceful shutdown
-  let running = true;
-  const shutdown = () => {
-    console.log("\n[monitor] Shutting down...");
-    running = false;
-  };
-  process.on("SIGINT", shutdown);
-  process.on("SIGTERM", shutdown);
 
   while (running) {
     const cycleStart = Date.now();

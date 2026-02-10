@@ -15,7 +15,6 @@ describe("loadConfig", () => {
     process.env.TELEGRAM_CHAT_ID = "test-chat-id";
     // Clear optional vars so they use defaults
     delete process.env.POLL_INTERVAL_MS;
-    delete process.env.INIT_MODE;
     delete process.env.JUICESWAP_GRAPHQL_URL;
     delete process.env.JUICEDOLLAR_GRAPHQL_URL;
     delete process.env.CITREA_EXPLORER_URL;
@@ -54,27 +53,6 @@ describe("loadConfig", () => {
     it("defaults to 30000 when not set", () => {
       const config = loadConfig();
       expect(config.pollIntervalMs).toBe(30000);
-    });
-  });
-
-  // ---- validateInitMode ----
-
-  describe("validateInitMode", () => {
-    it("accepts 'now'", () => {
-      process.env.INIT_MODE = "now";
-      const config = loadConfig();
-      expect(config.initMode).toBe("now");
-    });
-
-    it("accepts 'genesis'", () => {
-      process.env.INIT_MODE = "genesis";
-      const config = loadConfig();
-      expect(config.initMode).toBe("genesis");
-    });
-
-    it("throws for invalid value", () => {
-      process.env.INIT_MODE = "something";
-      expect(() => loadConfig()).toThrow("Invalid INIT_MODE");
     });
   });
 

@@ -1,5 +1,5 @@
 import { readFile, writeFile, rename, stat } from "node:fs/promises";
-import type { EventType, Watermarks } from "./types.js";
+import type { EventType, Watermarks, WatermarkLoadResult } from "./types.js";
 
 const ALL_EVENT_TYPES: EventType[] = [
   "governorProposalCreated",
@@ -35,19 +35,18 @@ function initializeWatermarks(timestamp: string): Watermarks {
 }
 
 export async function loadWatermarks(
-  path: string,
-  initMode: "now" | "genesis"
-): Promise<Watermarks> {
-  const defaultTs = initMode === "now" ? String(Math.floor(Date.now() / 1000)) : "0";
+  path: string
+): Promise<WatermarkLoadResult> {
+  const defaultTs = "0";
 
   try {
     await stat(path);
   } catch {
-    // File doesn't exist — initialize
-    console.log(`[watermark] No watermark file found. Initializing with mode="${initMode}" (ts=${defaultTs})`);
+    // File doesn't exist — first run
+    console.log(`[watermark] No watermark file found. Initializing (ts=${defaultTs})`);
     const wm = initializeWatermarks(defaultTs);
     await saveWatermarks(path, wm);
-    return wm;
+    return { watermarks: wm, isFirstRun: true };
   }
 
   try {
@@ -60,7 +59,7 @@ export async function loadWatermarks(
         wm[et] = parsed[et]!;
       }
     }
-    return wm;
+    return { watermarks: wm, isFirstRun: false };
   } catch (err) {
     // Corrupted file — backup and reinitialize
     console.warn(`[watermark] Corrupted watermark file, backing up to ${path}.bak`);
@@ -71,7 +70,7 @@ export async function loadWatermarks(
     }
     const wm = initializeWatermarks(defaultTs);
     await saveWatermarks(path, wm);
-    return wm;
+    return { watermarks: wm, isFirstRun: true };
   }
 }
 
