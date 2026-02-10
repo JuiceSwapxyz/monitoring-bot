@@ -259,7 +259,7 @@ export async function pollJuiceDollar(
         alerts.push({
           silent: false,
           eventType: "challengeStarted",
-          message: formatChallengeStarted(e),
+          message: formatChallengeStarted(e, explorerUrl),
         });
       }
       const last = data.challengeV2s.items[data.challengeV2s.items.length - 1];
@@ -278,7 +278,7 @@ export async function pollJuiceDollar(
         alerts.push({
           silent: false,
           eventType: "challengeSucceeded",
-          message: formatChallengeSucceeded(e),
+          message: formatChallengeSucceeded(e, explorerUrl),
         });
       }
       const last = data.challengeBidV2s.items[data.challengeBidV2s.items.length - 1];
@@ -297,7 +297,7 @@ export async function pollJuiceDollar(
         alerts.push({
           silent: false,
           eventType: "challengeAverted",
-          message: formatChallengeAverted(e),
+          message: formatChallengeAverted(e, explorerUrl),
         });
       }
       const last = data.challengeBidV2s.items[data.challengeBidV2s.items.length - 1];

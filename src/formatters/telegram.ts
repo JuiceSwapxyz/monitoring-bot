@@ -78,7 +78,8 @@ export function formatNewOriginalPosition(
     `Collateral: ${escapeHtml(e.collateralSymbol || "") || shortAddr(e.collateral)}\n` +
     `Price: ${priceStr} ${escapeHtml(e.stablecoinSymbol || "") || "JUSD"}\n\n` +
     `<b>Cooldown ends: ${formatTimestamp(e.cooldown)} (${timeUntil(e.cooldown)})</b>\n\n` +
-    `Action: Review and deny before cooldown ends if inappropriate.`
+    `Action: Review and deny before cooldown ends if inappropriate.\n\n` +
+    `Tx: ${txUrl(explorerUrl, e.txHash)}`
   );
 }
 
@@ -273,6 +274,7 @@ export function formatMinterDenied(
 
 export function formatChallengeStarted(
   e: ChallengeV2,
+  explorerUrl: string
 ): string {
   return (
     `<b>Challenge Started</b>\n\n` +
@@ -281,12 +283,14 @@ export function formatChallengeStarted(
     `Challenger: ${shortAddr(e.challenger)}\n` +
     `Size: ${e.size}\n` +
     `Liq Price: ${e.liqPrice}\n` +
-    `Duration: ${e.duration}s`
+    `Duration: ${e.duration}s\n\n` +
+    `Tx: ${txUrl(explorerUrl, e.txHash)}`
   );
 }
 
 export function formatChallengeSucceeded(
   e: ChallengeBidV2,
+  explorerUrl: string
 ): string {
   return (
     `<b>Challenge Succeeded</b>\n\n` +
@@ -295,12 +299,14 @@ export function formatChallengeSucceeded(
     `Bidder: ${shortAddr(e.bidder)}\n` +
     `Bid: ${e.bid}\n` +
     `Filled Size: ${e.filledSize}\n` +
-    `Acquired Collateral: ${e.acquiredCollateral}`
+    `Acquired Collateral: ${e.acquiredCollateral}\n\n` +
+    `Tx: ${txUrl(explorerUrl, e.txHash)}`
   );
 }
 
 export function formatChallengeAverted(
   e: ChallengeBidV2,
+  explorerUrl: string
 ): string {
   return (
     `<b>Challenge Averted</b>\n\n` +
@@ -308,7 +314,8 @@ export function formatChallengeAverted(
     `Challenge #${e.number}\n` +
     `Bidder: ${shortAddr(e.bidder)}\n` +
     `Bid: ${e.bid}\n` +
-    `Position saved.`
+    `Position saved.\n\n` +
+    `Tx: ${txUrl(explorerUrl, e.txHash)}`
   );
 }
 

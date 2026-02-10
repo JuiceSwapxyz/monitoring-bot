@@ -191,6 +191,7 @@ export const POSITION_V2S_NEW = gql`
     ) {
       items {
         id
+        txHash
         position
         owner
         collateral
@@ -417,6 +418,7 @@ export const CHALLENGE_V2S = gql`
     ) {
       items {
         id
+        txHash
         position
         number
         challenger
@@ -441,6 +443,7 @@ export const CHALLENGE_BID_V2S_SUCCEEDED = gql`
     ) {
       items {
         id
+        txHash
         position
         number
         numberBid
@@ -467,6 +470,7 @@ export const CHALLENGE_BID_V2S_AVERTED = gql`
     ) {
       items {
         id
+        txHash
         position
         number
         numberBid

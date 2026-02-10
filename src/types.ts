@@ -141,6 +141,7 @@ export interface GatewayBridgedTokenRegistration {
 
 export interface PositionV2 {
   id: string;
+  txHash: string;
   position: string;
   owner: string;
   stablecoinAddress: string;
@@ -263,6 +264,7 @@ export interface PositionDeniedByGovernance {
 
 export interface ChallengeV2 {
   id: string;
+  txHash: string;
   position: string;
   number: string;
   challenger: string;
@@ -279,6 +281,7 @@ export interface ChallengeV2 {
 
 export interface ChallengeBidV2 {
   id: string;
+  txHash: string;
   position: string;
   number: string;
   numberBid: string;
