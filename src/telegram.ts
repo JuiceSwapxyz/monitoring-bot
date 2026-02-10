@@ -3,11 +3,13 @@ import type { Alert } from "./types.js";
 const TELEGRAM_API = "https://api.telegram.org";
 const MAX_RETRIES = 3;
 const RETRY_BASE_MS = 1000;
+const FETCH_TIMEOUT_MS = 30_000;
+const MAX_RATE_LIMIT_WAIT_MS = 60_000;
 const MAX_MESSAGE_LENGTH = 4096;
 // Telegram rate limit: ~30 messages per second to a group
 const SEND_DELAY_MS = 100;
 
-function truncateMessage(text: string): string {
+export function truncateMessage(text: string): string {
   if (text.length <= MAX_MESSAGE_LENGTH) return text;
   return text.slice(0, MAX_MESSAGE_LENGTH - 15) + "\n\n[truncated]";
 }
@@ -23,7 +25,9 @@ export async function sendTelegramMessage(
 ): Promise<boolean> {
   const url = `${TELEGRAM_API}/bot${botToken}/sendMessage`;
 
-  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+  let attempt = 0;
+  let rateLimitWaitMs = 0;
+  while (attempt < MAX_RETRIES) {
     try {
       const res = await fetch(url, {
         method: "POST",
@@ -34,16 +38,23 @@ export async function sendTelegramMessage(
           parse_mode: "HTML",
           disable_web_page_preview: true,
         }),
+        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
       });
 
       if (res.ok) return true;
 
-      // Rate limited
+      // Rate limited — retry without consuming attempt budget
       if (res.status === 429) {
-        const body = (await res.json()) as { parameters?: { retry_after?: number } };
-        const retryAfter = body.parameters?.retry_after || 5;
+        const body = (await res.json().catch(() => ({}))) as { parameters?: { retry_after?: number } };
+        const retryAfter = body.parameters?.retry_after ?? 5;
+        const waitMs = retryAfter * 1000;
+        rateLimitWaitMs += waitMs;
+        if (rateLimitWaitMs > MAX_RATE_LIMIT_WAIT_MS) {
+          console.error(`[telegram] Rate limit wait exceeded ${MAX_RATE_LIMIT_WAIT_MS}ms, giving up`);
+          return false;
+        }
         console.warn(`[telegram] Rate limited, retrying after ${retryAfter}s`);
-        await sleep(retryAfter * 1000);
+        await sleep(waitMs);
         continue;
       }
 
@@ -53,9 +64,9 @@ export async function sendTelegramMessage(
       console.error(`[telegram] Send error (attempt ${attempt + 1}):`, err);
     }
 
-    if (attempt < MAX_RETRIES - 1) {
-      const delay = RETRY_BASE_MS * Math.pow(2, attempt);
-      await sleep(delay);
+    attempt++;
+    if (attempt < MAX_RETRIES) {
+      await sleep(RETRY_BASE_MS * Math.pow(2, attempt - 1));
     }
   }
 

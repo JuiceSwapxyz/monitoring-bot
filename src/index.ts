@@ -161,8 +161,10 @@ async function main() {
       const failures = await sendAlerts(config.telegramBotToken, config.telegramChatId, allAlerts);
       health.alertsSent += allAlerts.length;
       health.errors.telegram += failures;
+    }
 
-      // Save watermarks after successful send
+    // Save watermarks every cycle, not just when alerts exist
+    if (swapResult || dollarResult) {
       try {
         await saveWatermarks(config.watermarkPath, watermarks);
       } catch (err) {

@@ -17,14 +17,8 @@ export function loadConfig(): Config {
   return {
     telegramBotToken: requireEnv("TELEGRAM_BOT_TOKEN"),
     telegramChatId: requireEnv("TELEGRAM_CHAT_ID"),
-    juiceswapGraphqlUrl: optionalEnv(
-      "JUICESWAP_GRAPHQL_URL",
-      "https://dev.ponder.juiceswap.com/graphql"
-    ),
-    juicedollarGraphqlUrl: optionalEnv(
-      "JUICEDOLLAR_GRAPHQL_URL",
-      "https://dev.ponder.juicedollar.com/graphql"
-    ),
+    juiceswapGraphqlUrl: requireEnv("JUICESWAP_GRAPHQL_URL"),
+    juicedollarGraphqlUrl: requireEnv("JUICEDOLLAR_GRAPHQL_URL"),
     pollIntervalMs: validatePollInterval(optionalEnv("POLL_INTERVAL_MS", "30000")),
     citreaExplorerUrl: optionalEnv(
       "CITREA_EXPLORER_URL",

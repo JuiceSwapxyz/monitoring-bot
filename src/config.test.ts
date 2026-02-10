@@ -13,10 +13,10 @@ describe("loadConfig", () => {
     // Set required vars to dummy values by default
     process.env.TELEGRAM_BOT_TOKEN = "test-token";
     process.env.TELEGRAM_CHAT_ID = "test-chat-id";
+    process.env.JUICESWAP_GRAPHQL_URL = "https://test.juiceswap.com/graphql";
+    process.env.JUICEDOLLAR_GRAPHQL_URL = "https://test.juicedollar.com/graphql";
     // Clear optional vars so they use defaults
     delete process.env.POLL_INTERVAL_MS;
-    delete process.env.JUICESWAP_GRAPHQL_URL;
-    delete process.env.JUICEDOLLAR_GRAPHQL_URL;
     delete process.env.CITREA_EXPLORER_URL;
     delete process.env.WATERMARK_PATH;
   });
@@ -67,6 +67,16 @@ describe("loadConfig", () => {
     it("throws when TELEGRAM_CHAT_ID is missing", () => {
       delete process.env.TELEGRAM_CHAT_ID;
       expect(() => loadConfig()).toThrow("TELEGRAM_CHAT_ID");
+    });
+
+    it("throws when JUICESWAP_GRAPHQL_URL is missing", () => {
+      delete process.env.JUICESWAP_GRAPHQL_URL;
+      expect(() => loadConfig()).toThrow("JUICESWAP_GRAPHQL_URL");
+    });
+
+    it("throws when JUICEDOLLAR_GRAPHQL_URL is missing", () => {
+      delete process.env.JUICEDOLLAR_GRAPHQL_URL;
+      expect(() => loadConfig()).toThrow("JUICEDOLLAR_GRAPHQL_URL");
     });
   });
 });
