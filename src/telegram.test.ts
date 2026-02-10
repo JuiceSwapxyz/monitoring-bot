@@ -175,9 +175,9 @@ describe("sendAlerts", () => {
   // Test 6: sendAlerts returns correct failure count
   it("returns correct failure count for mixed success/failure", async () => {
     const alerts: Alert[] = [
-      { tier: "URGENT", eventType: "governorProposalCreated", message: "alert 1" },
-      { tier: "IMPORTANT", eventType: "governorProposalExecuted", message: "alert 2" },
-      { tier: "IMPORTANT", eventType: "governorProposalExecuted", message: "alert 3" },
+      { silent: false, eventType: "governorProposalCreated", message: "alert 1" },
+      { silent: false, eventType: "governorProposalExecuted", message: "alert 2" },
+      { silent: false, eventType: "governorProposalExecuted", message: "alert 3" },
     ];
 
     // Alert 1: success
@@ -191,8 +191,9 @@ describe("sendAlerts", () => {
 
     const promise = sendAlerts("token", "chat", alerts);
     await vi.advanceTimersByTimeAsync(60_000);
-    const failures = await promise;
+    const result = await promise;
 
-    expect(failures).toBe(1);
+    expect(result.failures).toBe(1);
+    expect(result.failedEventTypes).toEqual(new Set(["governorProposalExecuted"]));
   });
 });

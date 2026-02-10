@@ -1,4 +1,5 @@
 import type { GraphQLClient } from "graphql-request";
+import { safePoll } from "../graphql/client.js";
 import type {
   Alert,
   PollResult,
@@ -46,20 +47,6 @@ import {
   formatChallengeAverted,
 } from "../formatters/telegram.js";
 
-async function safePoll<T>(
-  client: GraphQLClient,
-  query: string,
-  variables: Record<string, unknown>,
-  label: string
-): Promise<T | null> {
-  try {
-    return await client.request<T>(query, variables);
-  } catch (err) {
-    console.error(`[juicedollar] Failed to poll ${label}:`, err instanceof Error ? err.message : err);
-    return null;
-  }
-}
-
 export async function pollJuiceDollar(
   client: GraphQLClient,
   watermarks: Watermarks,
@@ -68,7 +55,7 @@ export async function pollJuiceDollar(
   const alerts: Alert[] = [];
   const watermarkUpdates: Partial<Watermarks> = {};
 
-  // 1. New Original Positions (URGENT)
+  // 1. New Original Positions
   {
     const data = await safePoll<{
       positionV2s: { items: PositionV2[] };
@@ -77,7 +64,7 @@ export async function pollJuiceDollar(
     if (data?.positionV2s.items.length) {
       for (const e of data.positionV2s.items) {
         alerts.push({
-          tier: "URGENT",
+          silent: false,
           eventType: "newOriginalPosition",
           message: formatNewOriginalPosition(e, explorerUrl),
         });
@@ -87,7 +74,7 @@ export async function pollJuiceDollar(
     }
   }
 
-  // 2. Minter Applications (URGENT)
+  // 2. Minter Applications
   {
     const data = await safePoll<{
       minters: { items: Minter[] };
@@ -98,7 +85,7 @@ export async function pollJuiceDollar(
       for (const e of data.minters.items) {
         if (!e.denyDate) {
           alerts.push({
-            tier: "URGENT",
+            silent: false,
             eventType: "minterApplication",
             message: formatMinterApplication(e, explorerUrl),
           });
@@ -109,7 +96,7 @@ export async function pollJuiceDollar(
     }
   }
 
-  // 3. Minters Denied (IMPORTANT)
+  // 3. Minters Denied
   {
     const data = await safePoll<{
       minters: { items: Minter[] };
@@ -118,7 +105,7 @@ export async function pollJuiceDollar(
     if (data?.minters.items.length) {
       for (const e of data.minters.items) {
         alerts.push({
-          tier: "IMPORTANT",
+          silent: false,
           eventType: "minterDenied",
           message: formatMinterDenied(e, explorerUrl),
         });
@@ -128,7 +115,7 @@ export async function pollJuiceDollar(
     }
   }
 
-  // 4. Savings Rate Proposed (URGENT)
+  // 4. Savings Rate Proposed
   {
     const data = await safePoll<{
       savingsRateProposeds: { items: SavingsRateProposed[] };
@@ -137,7 +124,7 @@ export async function pollJuiceDollar(
     if (data?.savingsRateProposeds.items.length) {
       for (const e of data.savingsRateProposeds.items) {
         alerts.push({
-          tier: "URGENT",
+          silent: false,
           eventType: "savingsRateProposed",
           message: formatSavingsRateProposed(e, explorerUrl),
         });
@@ -147,7 +134,7 @@ export async function pollJuiceDollar(
     }
   }
 
-  // 5. Savings Rate Changed (IMPORTANT)
+  // 5. Savings Rate Changed
   {
     const data = await safePoll<{
       savingsRateChangeds: { items: SavingsRateChanged[] };
@@ -156,7 +143,7 @@ export async function pollJuiceDollar(
     if (data?.savingsRateChangeds.items.length) {
       for (const e of data.savingsRateChangeds.items) {
         alerts.push({
-          tier: "IMPORTANT",
+          silent: false,
           eventType: "savingsRateChanged",
           message: formatSavingsRateChanged(e, explorerUrl),
         });
@@ -166,7 +153,7 @@ export async function pollJuiceDollar(
     }
   }
 
-  // 6. Fee Rate Changes Proposed (URGENT)
+  // 6. Fee Rate Changes Proposed
   {
     const data = await safePoll<{
       rateChangesProposeds: { items: RateChangesProposed[] };
@@ -175,7 +162,7 @@ export async function pollJuiceDollar(
     if (data?.rateChangesProposeds.items.length) {
       for (const e of data.rateChangesProposeds.items) {
         alerts.push({
-          tier: "URGENT",
+          silent: false,
           eventType: "feeRateChangesProposed",
           message: formatFeeRateChangesProposed(e, explorerUrl),
         });
@@ -185,7 +172,7 @@ export async function pollJuiceDollar(
     }
   }
 
-  // 7. Fee Rate Changes Executed (IMPORTANT)
+  // 7. Fee Rate Changes Executed
   {
     const data = await safePoll<{
       rateChangesExecuteds: { items: RateChangesExecuted[] };
@@ -194,7 +181,7 @@ export async function pollJuiceDollar(
     if (data?.rateChangesExecuteds.items.length) {
       for (const e of data.rateChangesExecuteds.items) {
         alerts.push({
-          tier: "IMPORTANT",
+          silent: false,
           eventType: "feeRateChangesExecuted",
           message: formatFeeRateChangesExecuted(e, explorerUrl),
         });
@@ -204,7 +191,7 @@ export async function pollJuiceDollar(
     }
   }
 
-  // 8. Emergency Stops (URGENT)
+  // 8. Emergency Stops
   {
     const data = await safePoll<{
       emergencyStoppeds: { items: EmergencyStopped[] };
@@ -213,7 +200,7 @@ export async function pollJuiceDollar(
     if (data?.emergencyStoppeds.items.length) {
       for (const e of data.emergencyStoppeds.items) {
         alerts.push({
-          tier: "URGENT",
+          silent: false,
           eventType: "emergencyStop",
           message: formatEmergencyStop(e, explorerUrl),
         });
@@ -223,7 +210,7 @@ export async function pollJuiceDollar(
     }
   }
 
-  // 9. Forced Sales (URGENT)
+  // 9. Forced Sales
   {
     const data = await safePoll<{
       forcedSales: { items: ForcedSale[] };
@@ -232,7 +219,7 @@ export async function pollJuiceDollar(
     if (data?.forcedSales.items.length) {
       for (const e of data.forcedSales.items) {
         alerts.push({
-          tier: "URGENT",
+          silent: false,
           eventType: "forcedLiquidation",
           message: formatForcedLiquidation(e, explorerUrl),
         });
@@ -242,7 +229,7 @@ export async function pollJuiceDollar(
     }
   }
 
-  // 10. Position Denied by Governance (IMPORTANT)
+  // 10. Position Denied by Governance
   {
     const data = await safePoll<{
       positionDeniedByGovernances: { items: PositionDeniedByGovernance[] };
@@ -251,7 +238,7 @@ export async function pollJuiceDollar(
     if (data?.positionDeniedByGovernances.items.length) {
       for (const e of data.positionDeniedByGovernances.items) {
         alerts.push({
-          tier: "IMPORTANT",
+          silent: false,
           eventType: "positionDenied",
           message: formatPositionDenied(e, explorerUrl),
         });
@@ -261,7 +248,7 @@ export async function pollJuiceDollar(
     }
   }
 
-  // 11. Challenges Started (IMPORTANT)
+  // 11. Challenges Started
   {
     const data = await safePoll<{
       challengeV2s: { items: ChallengeV2[] };
@@ -270,7 +257,7 @@ export async function pollJuiceDollar(
     if (data?.challengeV2s.items.length) {
       for (const e of data.challengeV2s.items) {
         alerts.push({
-          tier: "IMPORTANT",
+          silent: false,
           eventType: "challengeStarted",
           message: formatChallengeStarted(e, explorerUrl),
         });
@@ -280,7 +267,7 @@ export async function pollJuiceDollar(
     }
   }
 
-  // 12. Challenge Bids Succeeded (IMPORTANT)
+  // 12. Challenge Bids Succeeded
   {
     const data = await safePoll<{
       challengeBidV2s: { items: ChallengeBidV2[] };
@@ -289,7 +276,7 @@ export async function pollJuiceDollar(
     if (data?.challengeBidV2s.items.length) {
       for (const e of data.challengeBidV2s.items) {
         alerts.push({
-          tier: "IMPORTANT",
+          silent: false,
           eventType: "challengeSucceeded",
           message: formatChallengeSucceeded(e, explorerUrl),
         });
@@ -299,7 +286,7 @@ export async function pollJuiceDollar(
     }
   }
 
-  // 13. Challenge Bids Averted (IMPORTANT)
+  // 13. Challenge Bids Averted
   {
     const data = await safePoll<{
       challengeBidV2s: { items: ChallengeBidV2[] };
@@ -308,7 +295,7 @@ export async function pollJuiceDollar(
     if (data?.challengeBidV2s.items.length) {
       for (const e of data.challengeBidV2s.items) {
         alerts.push({
-          tier: "IMPORTANT",
+          silent: false,
           eventType: "challengeAverted",
           message: formatChallengeAverted(e, explorerUrl),
         });

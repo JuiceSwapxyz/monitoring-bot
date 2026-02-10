@@ -63,7 +63,7 @@ describe("pollJuiceDollar — minter application denyDate filter", () => {
     const result = await pollJuiceDollar(client, makeWatermarks(), EXPLORER);
     const minterAlerts = result.alerts.filter((a) => a.eventType === "minterApplication");
     expect(minterAlerts).toHaveLength(1);
-    expect(minterAlerts[0].tier).toBe("URGENT");
+    expect(minterAlerts[0].silent).toBe(false);
     expect(result.watermarkUpdates.minterApplication).toBe("100");
   });
 

@@ -1,4 +1,5 @@
 import type { Alert } from "./types.js";
+import { sleep } from "./utils.js";
 
 const TELEGRAM_API = "https://api.telegram.org";
 const MAX_RETRIES = 3;
@@ -14,14 +15,11 @@ export function truncateMessage(text: string): string {
   return text.slice(0, MAX_MESSAGE_LENGTH - 15) + "\n\n[truncated]";
 }
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 export async function sendTelegramMessage(
   botToken: string,
   chatId: string,
-  text: string
+  text: string,
+  silent: boolean = false
 ): Promise<boolean> {
   const url = `${TELEGRAM_API}/bot${botToken}/sendMessage`;
 
@@ -37,6 +35,7 @@ export async function sendTelegramMessage(
           text: truncateMessage(text),
           parse_mode: "HTML",
           disable_web_page_preview: true,
+          disable_notification: silent,
         }),
         signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
       });
@@ -73,22 +72,29 @@ export async function sendTelegramMessage(
   return false;
 }
 
+export interface SendResult {
+  failures: number;
+  failedEventTypes: Set<string>;
+}
+
 export async function sendAlerts(
   botToken: string,
   chatId: string,
   alerts: Alert[]
-): Promise<number> {
+): Promise<SendResult> {
   let failures = 0;
+  const failedEventTypes = new Set<string>();
   for (const alert of alerts) {
-    const success = await sendTelegramMessage(botToken, chatId, alert.message);
+    const success = await sendTelegramMessage(botToken, chatId, alert.message, alert.silent);
     if (!success) {
-      console.error(`[telegram] Failed to send ${alert.tier} alert for ${alert.eventType}`);
+      console.error(`[telegram] Failed to send alert for ${alert.eventType}`);
       failures++;
+      failedEventTypes.add(alert.eventType);
     }
     // Small delay between messages to avoid rate limiting
     if (alerts.length > 1) {
       await sleep(SEND_DELAY_MS);
     }
   }
-  return failures;
+  return { failures, failedEventTypes };
 }

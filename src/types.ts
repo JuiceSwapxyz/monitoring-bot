@@ -1,18 +1,12 @@
-// Event tier levels
-export type Tier = "URGENT" | "IMPORTANT";
-
 // All monitored event types
 export type EventType =
-  // URGENT — JuiceSwap
   | "governorProposalCreated"
-  // URGENT — JuiceDollar
   | "minterApplication"
   | "newOriginalPosition"
   | "savingsRateProposed"
   | "feeRateChangesProposed"
   | "emergencyStop"
   | "forcedLiquidation"
-  // IMPORTANT — JuiceSwap
   | "governorProposalExecuted"
   | "governorProposalVetoed"
   | "factoryOwnerChanged"
@@ -21,7 +15,6 @@ export type EventType =
   | "feeCollectorUpdated"
   | "protectionParamsUpdated"
   | "bridgedTokenRegistered"
-  // IMPORTANT — JuiceDollar
   | "positionDenied"
   | "minterDenied"
   | "challengeStarted"
@@ -57,7 +50,7 @@ export interface PollResult {
 
 // Alert to send
 export interface Alert {
-  tier: Tier;
+  silent: boolean;
   eventType: EventType;
   message: string;
 }
@@ -148,6 +141,7 @@ export interface GatewayBridgedTokenRegistration {
 
 export interface PositionV2 {
   id: string;
+  txHash: string;
   position: string;
   owner: string;
   stablecoinAddress: string;
@@ -270,6 +264,7 @@ export interface PositionDeniedByGovernance {
 
 export interface ChallengeV2 {
   id: string;
+  txHash: string;
   position: string;
   number: string;
   challenger: string;
@@ -286,6 +281,7 @@ export interface ChallengeV2 {
 
 export interface ChallengeBidV2 {
   id: string;
+  txHash: string;
   position: string;
   number: string;
   numberBid: string;

@@ -29,10 +29,6 @@ import {
   escapeHtml,
 } from "./utils.js";
 
-// ============================================================
-// URGENT
-// ============================================================
-
 export function formatGovernorProposalCreated(
   e: GovernorProposal,
   explorerUrl: string
@@ -41,7 +37,7 @@ export function formatGovernorProposalCreated(
     ? escapeHtml(e.description.slice(0, 200))
     : "No description";
   return (
-    `[!!!] <b>New Governor Proposal</b>\n\n` +
+    `<b>New Governor Proposal</b>\n\n` +
     `Proposal #${e.proposalId}\n` +
     `Proposer: ${shortAddr(e.proposer)}\n` +
     `Target: ${shortAddr(e.target)}\n` +
@@ -60,7 +56,7 @@ export function formatMinterApplication(
   const appPeriodNum = parseInt(e.applicationPeriod, 10);
   const deadline = applyDateNum + appPeriodNum;
   return (
-    `[!!!] <b>New Minter Application</b>\n\n` +
+    `<b>New Minter Application</b>\n\n` +
     `Minter: ${shortAddr(e.minter)}\n` +
     `Suggestor: ${shortAddr(e.suggestor)}\n` +
     `Message: "${escapeHtml(e.applyMessage || "")}"\n\n` +
@@ -76,13 +72,14 @@ export function formatNewOriginalPosition(
 ): string {
   const priceStr = formatBigIntValue(e.price, e.stablecoinDecimals || 18);
   return (
-    `[!!!] <b>New Original Position Opened</b>\n\n` +
+    `<b>New Original Position Opened</b>\n\n` +
     `Position: ${shortAddr(e.position)}\n` +
     `Owner: ${shortAddr(e.owner)}\n` +
     `Collateral: ${escapeHtml(e.collateralSymbol || "") || shortAddr(e.collateral)}\n` +
     `Price: ${priceStr} ${escapeHtml(e.stablecoinSymbol || "") || "JUSD"}\n\n` +
     `<b>Cooldown ends: ${formatTimestamp(e.cooldown)} (${timeUntil(e.cooldown)})</b>\n\n` +
-    `Action: Review and deny before cooldown ends if inappropriate.`
+    `Action: Review and deny before cooldown ends if inappropriate.\n\n` +
+    `Tx: ${txUrl(explorerUrl, e.txHash)}`
   );
 }
 
@@ -91,7 +88,7 @@ export function formatSavingsRateProposed(
   explorerUrl: string
 ): string {
   return (
-    `[!!!] <b>Savings Rate Proposed</b>\n\n` +
+    `<b>Savings Rate Proposed</b>\n\n` +
     `Proposer: ${shortAddr(e.proposer)}\n` +
     `Next Rate: ${formatPPM(e.nextRate)}\n\n` +
     `<b>Takes effect: ${formatTimestamp(e.nextChange)} (${timeUntil(e.nextChange)})</b>\n\n` +
@@ -104,7 +101,7 @@ export function formatFeeRateChangesProposed(
   explorerUrl: string
 ): string {
   return (
-    `[!!!] <b>Fee Rate Changes Proposed</b>\n\n` +
+    `<b>Fee Rate Changes Proposed</b>\n\n` +
     `By: ${shortAddr(e.who)}\n` +
     `Fee Rate: ${formatPPM(e.nextFeeRate)}\n` +
     `Savings Fee Rate: ${formatPPM(e.nextSavingsFeeRate)}\n` +
@@ -119,7 +116,7 @@ export function formatEmergencyStop(
   explorerUrl: string
 ): string {
   return (
-    `[!!!] <b>BRIDGE EMERGENCY STOP</b>\n\n` +
+    `<b>BRIDGE EMERGENCY STOP</b>\n\n` +
     `Bridge: ${shortAddr(e.bridgeAddress)}\n` +
     `Caller: ${shortAddr(e.caller)}\n` +
     `Message: "${escapeHtml(e.message || "")}"\n\n` +
@@ -132,23 +129,19 @@ export function formatForcedLiquidation(
   explorerUrl: string
 ): string {
   return (
-    `[!!!] <b>Forced Liquidation</b>\n\n` +
+    `<b>Forced Liquidation</b>\n\n` +
     `Position: ${shortAddr(e.position)}\n` +
     `Amount: ${e.amount}\n\n` +
     `Tx: ${txUrl(explorerUrl, e.txHash)}`
   );
 }
 
-// ============================================================
-// IMPORTANT
-// ============================================================
-
 export function formatGovernorProposalExecuted(
   e: GovernorProposal,
   explorerUrl: string
 ): string {
   return (
-    `[!!] <b>Governor Proposal Executed</b>\n\n` +
+    `<b>Governor Proposal Executed</b>\n\n` +
     `Proposal #${e.proposalId}\n` +
     `Executed by: ${shortAddr(e.executedBy || "unknown")}\n` +
     `Target: ${shortAddr(e.target)}\n` +
@@ -163,7 +156,7 @@ export function formatGovernorProposalVetoed(
   explorerUrl: string
 ): string {
   return (
-    `[!!] <b>Governor Proposal Vetoed</b>\n\n` +
+    `<b>Governor Proposal Vetoed</b>\n\n` +
     `Proposal #${e.proposalId}\n` +
     `Vetoed by: ${shortAddr(e.vetoedBy || "unknown")}\n` +
     `Target: ${shortAddr(e.target)}\n` +
@@ -178,7 +171,7 @@ export function formatFactoryOwnerChanged(
   explorerUrl: string
 ): string {
   return (
-    `[!!] <b>Factory Owner Changed</b>\n\n` +
+    `<b>Factory Owner Changed</b>\n\n` +
     `Old: ${shortAddr(e.oldOwner)}\n` +
     `New: ${shortAddr(e.newOwner)}\n` +
     `Chain: Citrea (${e.chainId})\n\n` +
@@ -191,7 +184,7 @@ export function formatFeeCollectorOwnerUpdated(
   explorerUrl: string
 ): string {
   return (
-    `[!!] <b>FeeCollector Owner Updated</b>\n\n` +
+    `<b>FeeCollector Owner Updated</b>\n\n` +
     `New Owner: ${shortAddr(e.newOwner)}\n` +
     `Chain: Citrea (${e.chainId})\n\n` +
     `Tx: ${txUrl(explorerUrl, e.txHash)}`
@@ -203,7 +196,7 @@ export function formatSwapRouterUpdated(
   explorerUrl: string
 ): string {
   return (
-    `[!!] <b>Swap Router Updated</b>\n\n` +
+    `<b>Swap Router Updated</b>\n\n` +
     `Old: ${shortAddr(e.oldRouter)}\n` +
     `New: ${shortAddr(e.newRouter)}\n` +
     `Chain: Citrea (${e.chainId})\n\n` +
@@ -216,7 +209,7 @@ export function formatFeeCollectorUpdated(
   explorerUrl: string
 ): string {
   return (
-    `[!!] <b>Fee Collector Updated</b>\n\n` +
+    `<b>Fee Collector Updated</b>\n\n` +
     `Old: ${shortAddr(e.oldCollector)}\n` +
     `New: ${shortAddr(e.newCollector)}\n` +
     `Chain: Citrea (${e.chainId})\n\n` +
@@ -229,7 +222,7 @@ export function formatProtectionParamsUpdated(
   explorerUrl: string
 ): string {
   return (
-    `[!!] <b>Protection Params Updated</b>\n\n` +
+    `<b>Protection Params Updated</b>\n\n` +
     `TWAP Period: ${e.twapPeriod}s\n` +
     `Max Slippage: ${formatBPS(e.maxSlippageBps)}\n` +
     `Chain: Citrea (${e.chainId})\n\n` +
@@ -242,7 +235,7 @@ export function formatBridgedTokenRegistered(
   explorerUrl: string
 ): string {
   return (
-    `[!!] <b>Bridged Token Registered</b>\n\n` +
+    `<b>Bridged Token Registered</b>\n\n` +
     `Token: ${shortAddr(e.token)}\n` +
     `Bridge: ${shortAddr(e.bridge)}\n` +
     `Registered by: ${shortAddr(e.registeredBy)}\n` +
@@ -257,7 +250,7 @@ export function formatPositionDenied(
   explorerUrl: string
 ): string {
   return (
-    `[!!] <b>Position Denied by Governance</b>\n\n` +
+    `<b>Position Denied by Governance</b>\n\n` +
     `Position: ${shortAddr(e.position)}\n` +
     `Denier: ${shortAddr(e.denier)}\n` +
     `Message: "${escapeHtml(e.message || "")}"\n\n` +
@@ -270,7 +263,7 @@ export function formatMinterDenied(
   explorerUrl: string
 ): string {
   return (
-    `[!!] <b>Minter Denied</b>\n\n` +
+    `<b>Minter Denied</b>\n\n` +
     `Minter: ${shortAddr(e.minter)}\n` +
     `Vetor: ${shortAddr(e.vetor || "unknown")}\n` +
     `Deny Message: "${escapeHtml(e.denyMessage || "")}"\n` +
@@ -284,13 +277,14 @@ export function formatChallengeStarted(
   explorerUrl: string
 ): string {
   return (
-    `[!!] <b>Challenge Started</b>\n\n` +
+    `<b>Challenge Started</b>\n\n` +
     `Position: ${shortAddr(e.position)}\n` +
     `Challenge #${e.number}\n` +
     `Challenger: ${shortAddr(e.challenger)}\n` +
     `Size: ${e.size}\n` +
     `Liq Price: ${e.liqPrice}\n` +
-    `Duration: ${e.duration}s`
+    `Duration: ${e.duration}s\n\n` +
+    `Tx: ${txUrl(explorerUrl, e.txHash)}`
   );
 }
 
@@ -299,13 +293,14 @@ export function formatChallengeSucceeded(
   explorerUrl: string
 ): string {
   return (
-    `[!!] <b>Challenge Succeeded</b>\n\n` +
+    `<b>Challenge Succeeded</b>\n\n` +
     `Position: ${shortAddr(e.position)}\n` +
     `Challenge #${e.number}\n` +
     `Bidder: ${shortAddr(e.bidder)}\n` +
     `Bid: ${e.bid}\n` +
     `Filled Size: ${e.filledSize}\n` +
-    `Acquired Collateral: ${e.acquiredCollateral}`
+    `Acquired Collateral: ${e.acquiredCollateral}\n\n` +
+    `Tx: ${txUrl(explorerUrl, e.txHash)}`
   );
 }
 
@@ -314,12 +309,13 @@ export function formatChallengeAverted(
   explorerUrl: string
 ): string {
   return (
-    `[!!] <b>Challenge Averted</b>\n\n` +
+    `<b>Challenge Averted</b>\n\n` +
     `Position: ${shortAddr(e.position)}\n` +
     `Challenge #${e.number}\n` +
     `Bidder: ${shortAddr(e.bidder)}\n` +
     `Bid: ${e.bid}\n` +
-    `Position saved.`
+    `Position saved.\n\n` +
+    `Tx: ${txUrl(explorerUrl, e.txHash)}`
   );
 }
 
@@ -328,7 +324,7 @@ export function formatSavingsRateChanged(
   explorerUrl: string
 ): string {
   return (
-    `[!!] <b>Savings Rate Changed</b>\n\n` +
+    `<b>Savings Rate Changed</b>\n\n` +
     `Approved Rate: ${formatPPM(e.approvedRate)}\n\n` +
     `Tx: ${txUrl(explorerUrl, e.txHash)}`
   );
@@ -339,7 +335,7 @@ export function formatFeeRateChangesExecuted(
   explorerUrl: string
 ): string {
   return (
-    `[!!] <b>Fee Rate Changes Executed</b>\n\n` +
+    `<b>Fee Rate Changes Executed</b>\n\n` +
     `By: ${shortAddr(e.who)}\n` +
     `Fee Rate: ${formatPPM(e.nextFeeRate)}\n` +
     `Savings Fee Rate: ${formatPPM(e.nextSavingsFeeRate)}\n` +

@@ -1,4 +1,5 @@
 import type { GraphQLClient } from "graphql-request";
+import { safePoll } from "../graphql/client.js";
 import type {
   Alert,
   PollResult,
@@ -33,20 +34,6 @@ import {
   formatBridgedTokenRegistered,
 } from "../formatters/telegram.js";
 
-async function safePoll<T>(
-  client: GraphQLClient,
-  query: string,
-  variables: Record<string, unknown>,
-  label: string
-): Promise<T | null> {
-  try {
-    return await client.request<T>(query, variables);
-  } catch (err) {
-    console.error(`[juiceswap] Failed to poll ${label}:`, err instanceof Error ? err.message : err);
-    return null;
-  }
-}
-
 export async function pollJuiceSwap(
   client: GraphQLClient,
   watermarks: Watermarks,
@@ -55,7 +42,7 @@ export async function pollJuiceSwap(
   const alerts: Alert[] = [];
   const watermarkUpdates: Partial<Watermarks> = {};
 
-  // 1. Governor Proposals Created (URGENT)
+  // 1. Governor Proposals Created
   {
     const data = await safePoll<{
       governorProposals: { items: GovernorProposal[] };
@@ -64,7 +51,7 @@ export async function pollJuiceSwap(
     if (data?.governorProposals.items.length) {
       for (const e of data.governorProposals.items) {
         alerts.push({
-          tier: "URGENT",
+          silent: false,
           eventType: "governorProposalCreated",
           message: formatGovernorProposalCreated(e, explorerUrl),
         });
@@ -74,7 +61,7 @@ export async function pollJuiceSwap(
     }
   }
 
-  // 2. Governor Proposals Executed (IMPORTANT)
+  // 2. Governor Proposals Executed
   {
     const data = await safePoll<{
       governorProposals: { items: GovernorProposal[] };
@@ -84,13 +71,13 @@ export async function pollJuiceSwap(
       for (const e of data.governorProposals.items) {
         if (e.status === "executed") {
           alerts.push({
-            tier: "IMPORTANT",
+            silent: false,
             eventType: "governorProposalExecuted",
             message: formatGovernorProposalExecuted(e, explorerUrl),
           });
         } else if (e.status === "vetoed") {
           alerts.push({
-            tier: "IMPORTANT",
+            silent: false,
             eventType: "governorProposalVetoed",
             message: formatGovernorProposalVetoed(e, explorerUrl),
           });
@@ -105,7 +92,7 @@ export async function pollJuiceSwap(
     }
   }
 
-  // 3. Factory Owner Changes (IMPORTANT)
+  // 3. Factory Owner Changes
   {
     const data = await safePoll<{
       factoryOwnerChanges: { items: FactoryOwnerChange[] };
@@ -114,7 +101,7 @@ export async function pollJuiceSwap(
     if (data?.factoryOwnerChanges.items.length) {
       for (const e of data.factoryOwnerChanges.items) {
         alerts.push({
-          tier: "IMPORTANT",
+          silent: false,
           eventType: "factoryOwnerChanged",
           message: formatFactoryOwnerChanged(e, explorerUrl),
         });
@@ -124,7 +111,7 @@ export async function pollJuiceSwap(
     }
   }
 
-  // 4. FeeCollector Owner Updates (IMPORTANT)
+  // 4. FeeCollector Owner Updates
   {
     const data = await safePoll<{
       feeCollectorOwnerUpdates: { items: FeeCollectorOwnerUpdate[] };
@@ -133,7 +120,7 @@ export async function pollJuiceSwap(
     if (data?.feeCollectorOwnerUpdates.items.length) {
       for (const e of data.feeCollectorOwnerUpdates.items) {
         alerts.push({
-          tier: "IMPORTANT",
+          silent: false,
           eventType: "feeCollectorOwnerUpdated",
           message: formatFeeCollectorOwnerUpdated(e, explorerUrl),
         });
@@ -143,7 +130,7 @@ export async function pollJuiceSwap(
     }
   }
 
-  // 5. Swap Router Updates (IMPORTANT)
+  // 5. Swap Router Updates
   {
     const data = await safePoll<{
       feeCollectorRouterUpdates: { items: FeeCollectorRouterUpdate[] };
@@ -152,7 +139,7 @@ export async function pollJuiceSwap(
     if (data?.feeCollectorRouterUpdates.items.length) {
       for (const e of data.feeCollectorRouterUpdates.items) {
         alerts.push({
-          tier: "IMPORTANT",
+          silent: false,
           eventType: "swapRouterUpdated",
           message: formatSwapRouterUpdated(e, explorerUrl),
         });
@@ -162,7 +149,7 @@ export async function pollJuiceSwap(
     }
   }
 
-  // 6. Fee Collector Collector Updates (IMPORTANT)
+  // 6. Fee Collector Collector Updates
   {
     const data = await safePoll<{
       feeCollectorCollectorUpdates: { items: FeeCollectorCollectorUpdate[] };
@@ -171,7 +158,7 @@ export async function pollJuiceSwap(
     if (data?.feeCollectorCollectorUpdates.items.length) {
       for (const e of data.feeCollectorCollectorUpdates.items) {
         alerts.push({
-          tier: "IMPORTANT",
+          silent: false,
           eventType: "feeCollectorUpdated",
           message: formatFeeCollectorUpdated(e, explorerUrl),
         });
@@ -181,7 +168,7 @@ export async function pollJuiceSwap(
     }
   }
 
-  // 7. Protection Params Updates (IMPORTANT)
+  // 7. Protection Params Updates
   {
     const data = await safePoll<{
       feeCollectorProtectionUpdates: { items: FeeCollectorProtectionUpdate[] };
@@ -190,7 +177,7 @@ export async function pollJuiceSwap(
     if (data?.feeCollectorProtectionUpdates.items.length) {
       for (const e of data.feeCollectorProtectionUpdates.items) {
         alerts.push({
-          tier: "IMPORTANT",
+          silent: false,
           eventType: "protectionParamsUpdated",
           message: formatProtectionParamsUpdated(e, explorerUrl),
         });
@@ -200,7 +187,7 @@ export async function pollJuiceSwap(
     }
   }
 
-  // 8. Bridged Token Registrations (IMPORTANT)
+  // 8. Bridged Token Registrations
   {
     const data = await safePoll<{
       gatewayBridgedTokenRegistrations: { items: GatewayBridgedTokenRegistration[] };
@@ -209,7 +196,7 @@ export async function pollJuiceSwap(
     if (data?.gatewayBridgedTokenRegistrations.items.length) {
       for (const e of data.gatewayBridgedTokenRegistrations.items) {
         alerts.push({
-          tier: "IMPORTANT",
+          silent: false,
           eventType: "bridgedTokenRegistered",
           message: formatBridgedTokenRegistered(e, explorerUrl),
         });

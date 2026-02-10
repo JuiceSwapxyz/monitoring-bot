@@ -5,11 +5,8 @@ import { pollJuiceSwap } from "./pollers/juiceswap.js";
 import { pollJuiceDollar } from "./pollers/juicedollar.js";
 import { sendAlerts, sendTelegramMessage } from "./telegram.js";
 import { createHealthStats, logHealthIfDue } from "./health.js";
+import { sleep } from "./utils.js";
 import type { Alert, EventType } from "./types.js";
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 async function main() {
   const config = loadConfig();
@@ -85,6 +82,9 @@ async function main() {
       } catch (err) {
         console.error("[catchup] Failed to save watermarks:", err instanceof Error ? err.message : err);
       }
+
+      // Throttle between catch-up cycles to avoid hammering GraphQL endpoints
+      await sleep(2000);
     }
 
     if (totalEvents > 0) {
@@ -113,7 +113,7 @@ async function main() {
     `JuiceSwap: ${config.juiceswapGraphqlUrl}\n` +
     `JuiceDollar: ${config.juicedollarGraphqlUrl}\n` +
     `Poll interval: ${config.pollIntervalMs / 1000}s`;
-  await sendTelegramMessage(config.telegramBotToken, config.telegramChatId, startupMsg);
+  await sendTelegramMessage(config.telegramBotToken, config.telegramChatId, startupMsg, true);
 
   while (running) {
     const cycleStart = Date.now();
@@ -142,25 +142,32 @@ async function main() {
       health.lastSuccessfulPoll = Date.now();
     }
 
-    // Collect alerts and watermark updates
+    // Collect alerts and pending watermark updates (don't mutate watermarks yet)
+    const pendingWatermarkUpdates: Partial<Record<EventType, string>> = {};
     if (swapResult) {
       allAlerts.push(...swapResult.alerts);
-      Object.assign(watermarks, swapResult.watermarkUpdates);
+      Object.assign(pendingWatermarkUpdates, swapResult.watermarkUpdates);
     }
     if (dollarResult) {
       allAlerts.push(...dollarResult.alerts);
-      Object.assign(watermarks, dollarResult.watermarkUpdates);
+      Object.assign(pendingWatermarkUpdates, dollarResult.watermarkUpdates);
     }
 
-    // Sort: URGENT first, then IMPORTANT
-    const tierOrder: Record<string, number> = { URGENT: 0, IMPORTANT: 1 };
-    allAlerts.sort((a, b) => tierOrder[a.tier] - tierOrder[b.tier]);
-
+    // Send alerts and only advance watermarks for event types with zero failures
+    let failedEventTypes = new Set<string>();
     if (allAlerts.length > 0) {
-      console.log(`[monitor] Sending ${allAlerts.length} alerts (${allAlerts.filter((a) => a.tier === "URGENT").length} urgent)`);
-      const failures = await sendAlerts(config.telegramBotToken, config.telegramChatId, allAlerts);
-      health.alertsSent += allAlerts.length;
-      health.errors.telegram += failures;
+      console.log(`[monitor] Sending ${allAlerts.length} alerts`);
+      const result = await sendAlerts(config.telegramBotToken, config.telegramChatId, allAlerts);
+      failedEventTypes = result.failedEventTypes;
+      health.alertsSent += allAlerts.length - result.failures;
+      health.errors.telegram += result.failures;
+    }
+
+    // Apply only watermark updates for event types that had no delivery failures
+    for (const [eventType, value] of Object.entries(pendingWatermarkUpdates)) {
+      if (!failedEventTypes.has(eventType)) {
+        watermarks[eventType as EventType] = value;
+      }
     }
 
     // Save watermarks every cycle, not just when alerts exist
