@@ -147,10 +147,12 @@ async function main() {
     if (swapResult) {
       allAlerts.push(...swapResult.alerts);
       Object.assign(pendingWatermarkUpdates, swapResult.watermarkUpdates);
+      health.errors.juiceswap += swapResult.queryFailures;
     }
     if (dollarResult) {
       allAlerts.push(...dollarResult.alerts);
       Object.assign(pendingWatermarkUpdates, dollarResult.watermarkUpdates);
+      health.errors.juicedollar += dollarResult.queryFailures;
     }
 
     // Send alerts and only advance watermarks for event types with zero failures

@@ -46,6 +46,7 @@ export interface Config {
 export interface PollResult {
   alerts: Alert[];
   watermarkUpdates: Partial<Watermarks>;
+  queryFailures: number;
 }
 
 // Alert to send

@@ -54,12 +54,14 @@ export async function pollJuiceDollar(
 ): Promise<PollResult> {
   const alerts: Alert[] = [];
   const watermarkUpdates: Partial<Watermarks> = {};
+  let queryFailures = 0;
 
   // 1. New Original Positions
   {
     const data = await safePoll<{
       positionV2s: { items: PositionV2[] };
     }>(client, POSITION_V2S_NEW, { watermark: watermarks.newOriginalPosition }, "newOriginalPosition");
+    if (!data) queryFailures++;
 
     if (data?.positionV2s.items.length) {
       for (const e of data.positionV2s.items) {
@@ -79,6 +81,7 @@ export async function pollJuiceDollar(
     const data = await safePoll<{
       minters: { items: Minter[] };
     }>(client, MINTERS_NEW, { watermark: watermarks.minterApplication }, "minterApplication");
+    if (!data) queryFailures++;
 
     if (data?.minters.items.length) {
       // Only alert on new applications (no denyDate yet)
@@ -101,6 +104,7 @@ export async function pollJuiceDollar(
     const data = await safePoll<{
       minters: { items: Minter[] };
     }>(client, MINTERS_DENIED, { watermark: watermarks.minterDenied }, "minterDenied");
+    if (!data) queryFailures++;
 
     if (data?.minters.items.length) {
       for (const e of data.minters.items) {
@@ -120,6 +124,7 @@ export async function pollJuiceDollar(
     const data = await safePoll<{
       savingsRateProposeds: { items: SavingsRateProposed[] };
     }>(client, SAVINGS_RATE_PROPOSEDS, { watermark: watermarks.savingsRateProposed }, "savingsRateProposed");
+    if (!data) queryFailures++;
 
     if (data?.savingsRateProposeds.items.length) {
       for (const e of data.savingsRateProposeds.items) {
@@ -139,6 +144,7 @@ export async function pollJuiceDollar(
     const data = await safePoll<{
       savingsRateChangeds: { items: SavingsRateChanged[] };
     }>(client, SAVINGS_RATE_CHANGEDS, { watermark: watermarks.savingsRateChanged }, "savingsRateChanged");
+    if (!data) queryFailures++;
 
     if (data?.savingsRateChangeds.items.length) {
       for (const e of data.savingsRateChangeds.items) {
@@ -158,6 +164,7 @@ export async function pollJuiceDollar(
     const data = await safePoll<{
       rateChangesProposeds: { items: RateChangesProposed[] };
     }>(client, RATE_CHANGES_PROPOSEDS, { watermark: watermarks.feeRateChangesProposed }, "feeRateChangesProposed");
+    if (!data) queryFailures++;
 
     if (data?.rateChangesProposeds.items.length) {
       for (const e of data.rateChangesProposeds.items) {
@@ -177,6 +184,7 @@ export async function pollJuiceDollar(
     const data = await safePoll<{
       rateChangesExecuteds: { items: RateChangesExecuted[] };
     }>(client, RATE_CHANGES_EXECUTEDS, { watermark: watermarks.feeRateChangesExecuted }, "feeRateChangesExecuted");
+    if (!data) queryFailures++;
 
     if (data?.rateChangesExecuteds.items.length) {
       for (const e of data.rateChangesExecuteds.items) {
@@ -196,6 +204,7 @@ export async function pollJuiceDollar(
     const data = await safePoll<{
       emergencyStoppeds: { items: EmergencyStopped[] };
     }>(client, EMERGENCY_STOPPEDS, { watermark: watermarks.emergencyStop }, "emergencyStop");
+    if (!data) queryFailures++;
 
     if (data?.emergencyStoppeds.items.length) {
       for (const e of data.emergencyStoppeds.items) {
@@ -215,6 +224,7 @@ export async function pollJuiceDollar(
     const data = await safePoll<{
       forcedSales: { items: ForcedSale[] };
     }>(client, FORCED_SALES, { watermark: watermarks.forcedLiquidation }, "forcedLiquidation");
+    if (!data) queryFailures++;
 
     if (data?.forcedSales.items.length) {
       for (const e of data.forcedSales.items) {
@@ -234,6 +244,7 @@ export async function pollJuiceDollar(
     const data = await safePoll<{
       positionDeniedByGovernances: { items: PositionDeniedByGovernance[] };
     }>(client, POSITION_DENIED_BY_GOVERNANCES, { watermark: watermarks.positionDenied }, "positionDenied");
+    if (!data) queryFailures++;
 
     if (data?.positionDeniedByGovernances.items.length) {
       for (const e of data.positionDeniedByGovernances.items) {
@@ -253,6 +264,7 @@ export async function pollJuiceDollar(
     const data = await safePoll<{
       challengeV2s: { items: ChallengeV2[] };
     }>(client, CHALLENGE_V2S, { watermark: watermarks.challengeStarted }, "challengeStarted");
+    if (!data) queryFailures++;
 
     if (data?.challengeV2s.items.length) {
       for (const e of data.challengeV2s.items) {
@@ -272,6 +284,7 @@ export async function pollJuiceDollar(
     const data = await safePoll<{
       challengeBidV2s: { items: ChallengeBidV2[] };
     }>(client, CHALLENGE_BID_V2S_SUCCEEDED, { watermark: watermarks.challengeSucceeded }, "challengeSucceeded");
+    if (!data) queryFailures++;
 
     if (data?.challengeBidV2s.items.length) {
       for (const e of data.challengeBidV2s.items) {
@@ -291,6 +304,7 @@ export async function pollJuiceDollar(
     const data = await safePoll<{
       challengeBidV2s: { items: ChallengeBidV2[] };
     }>(client, CHALLENGE_BID_V2S_AVERTED, { watermark: watermarks.challengeAverted }, "challengeAverted");
+    if (!data) queryFailures++;
 
     if (data?.challengeBidV2s.items.length) {
       for (const e of data.challengeBidV2s.items) {
@@ -305,5 +319,5 @@ export async function pollJuiceDollar(
     }
   }
 
-  return { alerts, watermarkUpdates };
+  return { alerts, watermarkUpdates, queryFailures };
 }

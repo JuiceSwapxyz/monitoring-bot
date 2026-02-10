@@ -41,12 +41,14 @@ export async function pollJuiceSwap(
 ): Promise<PollResult> {
   const alerts: Alert[] = [];
   const watermarkUpdates: Partial<Watermarks> = {};
+  let queryFailures = 0;
 
   // 1. Governor Proposals Created
   {
     const data = await safePoll<{
       governorProposals: { items: GovernorProposal[] };
     }>(client, GOVERNOR_PROPOSALS_NEW, { watermark: watermarks.governorProposalCreated }, "governorProposalCreated");
+    if (!data) queryFailures++;
 
     if (data?.governorProposals.items.length) {
       for (const e of data.governorProposals.items) {
@@ -66,6 +68,7 @@ export async function pollJuiceSwap(
     const data = await safePoll<{
       governorProposals: { items: GovernorProposal[] };
     }>(client, GOVERNOR_PROPOSALS_RESOLVED, { watermark: watermarks.governorProposalExecuted }, "governorProposalResolved");
+    if (!data) queryFailures++;
 
     if (data?.governorProposals.items.length) {
       for (const e of data.governorProposals.items) {
@@ -97,6 +100,7 @@ export async function pollJuiceSwap(
     const data = await safePoll<{
       factoryOwnerChanges: { items: FactoryOwnerChange[] };
     }>(client, FACTORY_OWNER_CHANGES, { watermark: watermarks.factoryOwnerChanged }, "factoryOwnerChanged");
+    if (!data) queryFailures++;
 
     if (data?.factoryOwnerChanges.items.length) {
       for (const e of data.factoryOwnerChanges.items) {
@@ -116,6 +120,7 @@ export async function pollJuiceSwap(
     const data = await safePoll<{
       feeCollectorOwnerUpdates: { items: FeeCollectorOwnerUpdate[] };
     }>(client, FEE_COLLECTOR_OWNER_UPDATES, { watermark: watermarks.feeCollectorOwnerUpdated }, "feeCollectorOwnerUpdated");
+    if (!data) queryFailures++;
 
     if (data?.feeCollectorOwnerUpdates.items.length) {
       for (const e of data.feeCollectorOwnerUpdates.items) {
@@ -135,6 +140,7 @@ export async function pollJuiceSwap(
     const data = await safePoll<{
       feeCollectorRouterUpdates: { items: FeeCollectorRouterUpdate[] };
     }>(client, FEE_COLLECTOR_ROUTER_UPDATES, { watermark: watermarks.swapRouterUpdated }, "swapRouterUpdated");
+    if (!data) queryFailures++;
 
     if (data?.feeCollectorRouterUpdates.items.length) {
       for (const e of data.feeCollectorRouterUpdates.items) {
@@ -154,6 +160,7 @@ export async function pollJuiceSwap(
     const data = await safePoll<{
       feeCollectorCollectorUpdates: { items: FeeCollectorCollectorUpdate[] };
     }>(client, FEE_COLLECTOR_COLLECTOR_UPDATES, { watermark: watermarks.feeCollectorUpdated }, "feeCollectorUpdated");
+    if (!data) queryFailures++;
 
     if (data?.feeCollectorCollectorUpdates.items.length) {
       for (const e of data.feeCollectorCollectorUpdates.items) {
@@ -173,6 +180,7 @@ export async function pollJuiceSwap(
     const data = await safePoll<{
       feeCollectorProtectionUpdates: { items: FeeCollectorProtectionUpdate[] };
     }>(client, FEE_COLLECTOR_PROTECTION_UPDATES, { watermark: watermarks.protectionParamsUpdated }, "protectionParamsUpdated");
+    if (!data) queryFailures++;
 
     if (data?.feeCollectorProtectionUpdates.items.length) {
       for (const e of data.feeCollectorProtectionUpdates.items) {
@@ -192,6 +200,7 @@ export async function pollJuiceSwap(
     const data = await safePoll<{
       gatewayBridgedTokenRegistrations: { items: GatewayBridgedTokenRegistration[] };
     }>(client, GATEWAY_BRIDGED_TOKEN_REGISTRATIONS, { watermark: watermarks.bridgedTokenRegistered }, "bridgedTokenRegistered");
+    if (!data) queryFailures++;
 
     if (data?.gatewayBridgedTokenRegistrations.items.length) {
       for (const e of data.gatewayBridgedTokenRegistrations.items) {
@@ -206,5 +215,5 @@ export async function pollJuiceSwap(
     }
   }
 
-  return { alerts, watermarkUpdates };
+  return { alerts, watermarkUpdates, queryFailures };
 }

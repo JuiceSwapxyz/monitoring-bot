@@ -143,6 +143,7 @@ describe("pollJuiceSwap — error handling", () => {
     // Should still complete — just no alerts from the failed query
     expect(result.alerts).toEqual([]);
     expect(result.watermarkUpdates).toEqual({});
+    expect(result.queryFailures).toBe(1);
   });
 });
 
@@ -153,5 +154,6 @@ describe("pollJuiceSwap — empty results", () => {
     const result = await pollJuiceSwap(client, makeWatermarks(), EXPLORER);
     expect(result.alerts).toEqual([]);
     expect(result.watermarkUpdates).toEqual({});
+    expect(result.queryFailures).toBe(0);
   });
 });
