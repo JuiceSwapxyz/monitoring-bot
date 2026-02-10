@@ -31,9 +31,27 @@ If the watermark file is corrupted, it is backed up to `.watermarks.json.bak` an
 
 ## Running
 
+### Local (quick)
+
 ```
-npm start          # production
-npm run dev        # watch mode
+npm run dev        # watch mode with hot reload
+npm start          # production (requires npm run build first)
+```
+
+### Docker (recommended for production)
+
+```
+docker compose up -d        # start in background
+docker compose logs -f      # follow logs
+docker compose down         # stop
+docker compose up -d --build  # rebuild after code changes
+```
+
+Watermarks persist in `./data/` on the host, so containers can be rebuilt without losing event tracking state. The container auto-restarts on crashes.
+
+### Tests
+
+```
 npm test           # run tests
 npm run test:watch # tests in watch mode
 ```

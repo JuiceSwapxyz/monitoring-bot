@@ -1,0 +1,10 @@
+services:
+  monitor:
+    build: .
+    container_name: juice-monitor
+    env_file: .env
+    environment:
+      - WATERMARK_PATH=/app/data/.watermarks.json
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
