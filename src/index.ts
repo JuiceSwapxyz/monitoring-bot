@@ -5,11 +5,8 @@ import { pollJuiceSwap } from "./pollers/juiceswap.js";
 import { pollJuiceDollar } from "./pollers/juicedollar.js";
 import { sendAlerts, sendTelegramMessage } from "./telegram.js";
 import { createHealthStats, logHealthIfDue } from "./health.js";
+import { sleep } from "./utils.js";
 import type { Alert, EventType } from "./types.js";
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 async function main() {
   const config = loadConfig();
@@ -85,6 +82,9 @@ async function main() {
       } catch (err) {
         console.error("[catchup] Failed to save watermarks:", err instanceof Error ? err.message : err);
       }
+
+      // Throttle between catch-up cycles to avoid hammering GraphQL endpoints
+      await sleep(2000);
     }
 
     if (totalEvents > 0) {
@@ -155,7 +155,7 @@ async function main() {
     if (allAlerts.length > 0) {
       console.log(`[monitor] Sending ${allAlerts.length} alerts`);
       const failures = await sendAlerts(config.telegramBotToken, config.telegramChatId, allAlerts);
-      health.alertsSent += allAlerts.length;
+      health.alertsSent += allAlerts.length - failures;
       health.errors.telegram += failures;
     }
 

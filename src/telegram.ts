@@ -1,4 +1,5 @@
 import type { Alert } from "./types.js";
+import { sleep } from "./utils.js";
 
 const TELEGRAM_API = "https://api.telegram.org";
 const MAX_RETRIES = 3;
@@ -12,10 +13,6 @@ const SEND_DELAY_MS = 100;
 export function truncateMessage(text: string): string {
   if (text.length <= MAX_MESSAGE_LENGTH) return text;
   return text.slice(0, MAX_MESSAGE_LENGTH - 15) + "\n\n[truncated]";
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export async function sendTelegramMessage(

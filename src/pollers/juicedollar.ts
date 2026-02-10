@@ -1,4 +1,5 @@
 import type { GraphQLClient } from "graphql-request";
+import { safePoll } from "../graphql/client.js";
 import type {
   Alert,
   PollResult,
@@ -45,20 +46,6 @@ import {
   formatChallengeSucceeded,
   formatChallengeAverted,
 } from "../formatters/telegram.js";
-
-async function safePoll<T>(
-  client: GraphQLClient,
-  query: string,
-  variables: Record<string, unknown>,
-  label: string
-): Promise<T | null> {
-  try {
-    return await client.request<T>(query, variables);
-  } catch (err) {
-    console.error(`[juicedollar] Failed to poll ${label}:`, err instanceof Error ? err.message : err);
-    return null;
-  }
-}
 
 export async function pollJuiceDollar(
   client: GraphQLClient,
@@ -272,7 +259,7 @@ export async function pollJuiceDollar(
         alerts.push({
           silent: false,
           eventType: "challengeStarted",
-          message: formatChallengeStarted(e, explorerUrl),
+          message: formatChallengeStarted(e),
         });
       }
       const last = data.challengeV2s.items[data.challengeV2s.items.length - 1];
@@ -291,7 +278,7 @@ export async function pollJuiceDollar(
         alerts.push({
           silent: false,
           eventType: "challengeSucceeded",
-          message: formatChallengeSucceeded(e, explorerUrl),
+          message: formatChallengeSucceeded(e),
         });
       }
       const last = data.challengeBidV2s.items[data.challengeBidV2s.items.length - 1];
@@ -310,7 +297,7 @@ export async function pollJuiceDollar(
         alerts.push({
           silent: false,
           eventType: "challengeAverted",
-          message: formatChallengeAverted(e, explorerUrl),
+          message: formatChallengeAverted(e),
         });
       }
       const last = data.challengeBidV2s.items[data.challengeBidV2s.items.length - 1];

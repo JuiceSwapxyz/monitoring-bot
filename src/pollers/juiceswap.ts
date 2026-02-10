@@ -1,4 +1,5 @@
 import type { GraphQLClient } from "graphql-request";
+import { safePoll } from "../graphql/client.js";
 import type {
   Alert,
   PollResult,
@@ -32,20 +33,6 @@ import {
   formatProtectionParamsUpdated,
   formatBridgedTokenRegistered,
 } from "../formatters/telegram.js";
-
-async function safePoll<T>(
-  client: GraphQLClient,
-  query: string,
-  variables: Record<string, unknown>,
-  label: string
-): Promise<T | null> {
-  try {
-    return await client.request<T>(query, variables);
-  } catch (err) {
-    console.error(`[juiceswap] Failed to poll ${label}:`, err instanceof Error ? err.message : err);
-    return null;
-  }
-}
 
 export async function pollJuiceSwap(
   client: GraphQLClient,

@@ -273,7 +273,6 @@ export function formatMinterDenied(
 
 export function formatChallengeStarted(
   e: ChallengeV2,
-  explorerUrl: string
 ): string {
   return (
     `<b>Challenge Started</b>\n\n` +
@@ -288,7 +287,6 @@ export function formatChallengeStarted(
 
 export function formatChallengeSucceeded(
   e: ChallengeBidV2,
-  explorerUrl: string
 ): string {
   return (
     `<b>Challenge Succeeded</b>\n\n` +
@@ -303,7 +301,6 @@ export function formatChallengeSucceeded(
 
 export function formatChallengeAverted(
   e: ChallengeBidV2,
-  explorerUrl: string
 ): string {
   return (
     `<b>Challenge Averted</b>\n\n` +

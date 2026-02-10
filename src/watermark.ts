@@ -1,30 +1,31 @@
 import { readFile, writeFile, rename, stat } from "node:fs/promises";
 import type { EventType, Watermarks, WatermarkLoadResult } from "./types.js";
 
-const ALL_EVENT_TYPES: EventType[] = [
-  "governorProposalCreated",
-  "minterApplication",
-  "newOriginalPosition",
-  "savingsRateProposed",
-  "feeRateChangesProposed",
-  "emergencyStop",
-  "forcedLiquidation",
-  "governorProposalExecuted",
-  "governorProposalVetoed",
-  "factoryOwnerChanged",
-  "feeCollectorOwnerUpdated",
-  "swapRouterUpdated",
-  "feeCollectorUpdated",
-  "protectionParamsUpdated",
-  "bridgedTokenRegistered",
-  "positionDenied",
-  "minterDenied",
-  "challengeStarted",
-  "challengeSucceeded",
-  "challengeAverted",
-  "savingsRateChanged",
-  "feeRateChangesExecuted",
-];
+const EVENT_TYPE_RECORD: Record<EventType, true> = {
+  governorProposalCreated: true,
+  minterApplication: true,
+  newOriginalPosition: true,
+  savingsRateProposed: true,
+  feeRateChangesProposed: true,
+  emergencyStop: true,
+  forcedLiquidation: true,
+  governorProposalExecuted: true,
+  governorProposalVetoed: true,
+  factoryOwnerChanged: true,
+  feeCollectorOwnerUpdated: true,
+  swapRouterUpdated: true,
+  feeCollectorUpdated: true,
+  protectionParamsUpdated: true,
+  bridgedTokenRegistered: true,
+  positionDenied: true,
+  minterDenied: true,
+  challengeStarted: true,
+  challengeSucceeded: true,
+  challengeAverted: true,
+  savingsRateChanged: true,
+  feeRateChangesExecuted: true,
+};
+const ALL_EVENT_TYPES = Object.keys(EVENT_TYPE_RECORD) as EventType[];
 
 function initializeWatermarks(timestamp: string): Watermarks {
   const wm = {} as Watermarks;
