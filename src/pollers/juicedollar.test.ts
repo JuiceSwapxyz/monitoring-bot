@@ -149,6 +149,6 @@ describe("pollJuiceDollar — general patterns", () => {
     const result = await pollJuiceDollar(client, makeWatermarks(), EXPLORER);
     expect(result.alerts).toEqual([]);
     expect(result.watermarkUpdates).toEqual({});
-    expect(result.queryFailures).toBe(13);
+    expect(result.queryFailures).toBe(19);
   });
 });

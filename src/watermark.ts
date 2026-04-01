@@ -24,6 +24,12 @@ const EVENT_TYPE_RECORD: Record<EventType, true> = {
   challengeAverted: true,
   savingsRateChanged: true,
   feeRateChangesExecuted: true,
+  mintingHubRateProposed: true,
+  mintingHubRateChanged: true,
+  savingsVaultDeposit: true,
+  savingsVaultWithdraw: true,
+  savingsVaultInterestClaimed: true,
+  positionPriceIncrease: true,
 };
 const ALL_EVENT_TYPES = Object.keys(EVENT_TYPE_RECORD) as EventType[];
 

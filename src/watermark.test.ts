@@ -58,8 +58,8 @@ describe("watermark persistence", () => {
     // Missing keys filled with "0"
     expect(watermarks.minterApplication).toBe("0");
     expect(watermarks.challengeAverted).toBe("0");
-    // Total key count should be 22
-    expect(Object.keys(watermarks).length).toBe(22);
+    // Total key count should be 28
+    expect(Object.keys(watermarks).length).toBe(28);
     expect(isFirstRun).toBe(false);
   });
 

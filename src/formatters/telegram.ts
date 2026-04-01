@@ -17,6 +17,12 @@ import type {
   PositionDeniedByGovernance,
   ChallengeV2,
   ChallengeBidV2,
+  MintingUpdateV2,
+  MintingHubRateProposed,
+  MintingHubRateChanged,
+  SavingsVaultDeposit,
+  SavingsVaultWithdraw,
+  SavingsVaultInterestClaimed,
 } from "../types.js";
 import {
   shortAddr,
@@ -340,6 +346,90 @@ export function formatFeeRateChangesExecuted(
     `Fee Rate: ${formatPPM(e.nextFeeRate)}\n` +
     `Savings Fee Rate: ${formatPPM(e.nextSavingsFeeRate)}\n` +
     `Minting Fee Rate: ${formatPPM(e.nextMintingFeeRate)}\n\n` +
+    `Tx: ${txUrl(explorerUrl, e.txHash)}`
+  );
+}
+
+export function formatPositionPriceIncrease(
+  e: MintingUpdateV2,
+  explorerUrl: string
+): string {
+  const priceStr = formatBigIntValue(e.price, 18);
+  const adjStr = formatBigIntValue(e.priceAdjusted, 18);
+  return (
+    `<b>POSITION PRICE INCREASE</b>\n\n` +
+    `Position: ${shortAddr(e.position)}\n` +
+    `Owner: ${shortAddr(e.owner)}\n` +
+    `Collateral: ${escapeHtml(e.collateralSymbol)}\n` +
+    `New Price: ${priceStr}\n` +
+    `Increase: +${adjStr}\n\n` +
+    `<b>Cooldown ends: ${formatTimestamp(e.cooldown)} (${timeUntil(e.cooldown)})</b>\n\n` +
+    `Action: Challenge before cooldown ends if price is inappropriate.\n\n` +
+    `Tx: ${txUrl(explorerUrl, e.txHash)}`
+  );
+}
+
+export function formatMintingHubRateProposed(
+  e: MintingHubRateProposed,
+  explorerUrl: string
+): string {
+  return (
+    `<b>MintingHub Rate Proposed</b>\n\n` +
+    `Proposer: ${shortAddr(e.proposer)}\n` +
+    `Next Rate: ${formatPPM(e.nextRate)}\n\n` +
+    `<b>Takes effect: ${formatTimestamp(e.nextChange)} (${timeUntil(e.nextChange)})</b>\n\n` +
+    `Tx: ${txUrl(explorerUrl, e.txHash)}`
+  );
+}
+
+export function formatMintingHubRateChanged(
+  e: MintingHubRateChanged,
+  explorerUrl: string
+): string {
+  return (
+    `<b>MintingHub Rate Changed</b>\n\n` +
+    `Approved Rate: ${formatPPM(e.approvedRate)}\n\n` +
+    `Tx: ${txUrl(explorerUrl, e.txHash)}`
+  );
+}
+
+export function formatSavingsVaultDeposit(
+  e: SavingsVaultDeposit,
+  explorerUrl: string
+): string {
+  return (
+    `<b>Savings Vault Deposit</b>\n\n` +
+    `Sender: ${shortAddr(e.sender)}\n` +
+    `Owner: ${shortAddr(e.owner)}\n` +
+    `Assets: ${formatBigIntValue(e.assets, 18)} JUSD\n` +
+    `Shares: ${formatBigIntValue(e.shares, 18)}\n\n` +
+    `Tx: ${txUrl(explorerUrl, e.txHash)}`
+  );
+}
+
+export function formatSavingsVaultWithdraw(
+  e: SavingsVaultWithdraw,
+  explorerUrl: string
+): string {
+  return (
+    `<b>Savings Vault Withdraw</b>\n\n` +
+    `Sender: ${shortAddr(e.sender)}\n` +
+    `Receiver: ${shortAddr(e.receiver)}\n` +
+    `Owner: ${shortAddr(e.owner)}\n` +
+    `Assets: ${formatBigIntValue(e.assets, 18)} JUSD\n` +
+    `Shares: ${formatBigIntValue(e.shares, 18)}\n\n` +
+    `Tx: ${txUrl(explorerUrl, e.txHash)}`
+  );
+}
+
+export function formatSavingsVaultInterestClaimed(
+  e: SavingsVaultInterestClaimed,
+  explorerUrl: string
+): string {
+  return (
+    `<b>Savings Vault Interest Claimed</b>\n\n` +
+    `Interest: ${formatBigIntValue(e.interest, 18)} JUSD\n` +
+    `Total Claimed: ${formatBigIntValue(e.totalClaimed, 18)} JUSD\n\n` +
     `Tx: ${txUrl(explorerUrl, e.txHash)}`
   );
 }

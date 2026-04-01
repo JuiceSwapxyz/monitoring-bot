@@ -15,6 +15,12 @@ import type {
   PositionDeniedByGovernance,
   ChallengeV2,
   ChallengeBidV2,
+  MintingUpdateV2,
+  MintingHubRateProposed,
+  MintingHubRateChanged,
+  SavingsVaultDeposit,
+  SavingsVaultWithdraw,
+  SavingsVaultInterestClaimed,
 } from "../types.js";
 import {
   POSITION_V2S_NEW,
@@ -30,6 +36,12 @@ import {
   CHALLENGE_V2S,
   CHALLENGE_BID_V2S_SUCCEEDED,
   CHALLENGE_BID_V2S_AVERTED,
+  MINTING_UPDATE_V2S_PRICE_INCREASE,
+  MINTING_HUB_RATE_PROPOSEDS,
+  MINTING_HUB_RATE_CHANGEDS,
+  SAVINGS_VAULT_DEPOSITS,
+  SAVINGS_VAULT_WITHDRAWS,
+  SAVINGS_VAULT_INTEREST_CLAIMEDS,
 } from "../graphql/queries.js";
 import {
   formatNewOriginalPosition,
@@ -45,6 +57,12 @@ import {
   formatChallengeStarted,
   formatChallengeSucceeded,
   formatChallengeAverted,
+  formatPositionPriceIncrease,
+  formatMintingHubRateProposed,
+  formatMintingHubRateChanged,
+  formatSavingsVaultDeposit,
+  formatSavingsVaultWithdraw,
+  formatSavingsVaultInterestClaimed,
 } from "../formatters/telegram.js";
 
 export async function pollJuiceDollar(
@@ -316,6 +334,131 @@ export async function pollJuiceDollar(
       }
       const last = data.challengeBidV2s.items[data.challengeBidV2s.items.length - 1];
       watermarkUpdates.challengeAverted = last.created;
+    }
+  }
+
+  // 14. Position Price Increases
+  {
+    const data = await safePoll<{
+      mintingUpdateV2s: { items: MintingUpdateV2[] };
+    }>(client, MINTING_UPDATE_V2S_PRICE_INCREASE, { watermark: watermarks.positionPriceIncrease }, "positionPriceIncrease");
+    if (!data) queryFailures++;
+
+    if (data?.mintingUpdateV2s.items.length) {
+      for (const e of data.mintingUpdateV2s.items) {
+        // Skip first MintingUpdate (position opening, not a price change) and
+        // skip reference-validated price increases (no cooldown triggered, no governance action needed).
+        // Only alert when cooldown is in the future relative to the event, meaning a 3-day review window started.
+        if (e.id.endsWith("-1")) continue;
+        if (BigInt(e.cooldown) <= BigInt(e.created)) continue;
+        alerts.push({
+          silent: false,
+          eventType: "positionPriceIncrease",
+          message: formatPositionPriceIncrease(e, explorerUrl),
+        });
+      }
+      const last = data.mintingUpdateV2s.items[data.mintingUpdateV2s.items.length - 1];
+      watermarkUpdates.positionPriceIncrease = last.created;
+    }
+  }
+
+  // 15. MintingHub Rate Proposed
+  {
+    const data = await safePoll<{
+      mintingHubRateProposeds: { items: MintingHubRateProposed[] };
+    }>(client, MINTING_HUB_RATE_PROPOSEDS, { watermark: watermarks.mintingHubRateProposed }, "mintingHubRateProposed");
+    if (!data) queryFailures++;
+
+    if (data?.mintingHubRateProposeds.items.length) {
+      for (const e of data.mintingHubRateProposeds.items) {
+        alerts.push({
+          silent: false,
+          eventType: "mintingHubRateProposed",
+          message: formatMintingHubRateProposed(e, explorerUrl),
+        });
+      }
+      const last = data.mintingHubRateProposeds.items[data.mintingHubRateProposeds.items.length - 1];
+      watermarkUpdates.mintingHubRateProposed = last.created;
+    }
+  }
+
+  // 16. MintingHub Rate Changed
+  {
+    const data = await safePoll<{
+      mintingHubRateChangeds: { items: MintingHubRateChanged[] };
+    }>(client, MINTING_HUB_RATE_CHANGEDS, { watermark: watermarks.mintingHubRateChanged }, "mintingHubRateChanged");
+    if (!data) queryFailures++;
+
+    if (data?.mintingHubRateChangeds.items.length) {
+      for (const e of data.mintingHubRateChangeds.items) {
+        alerts.push({
+          silent: false,
+          eventType: "mintingHubRateChanged",
+          message: formatMintingHubRateChanged(e, explorerUrl),
+        });
+      }
+      const last = data.mintingHubRateChangeds.items[data.mintingHubRateChangeds.items.length - 1];
+      watermarkUpdates.mintingHubRateChanged = last.created;
+    }
+  }
+
+  // 17. Savings Vault Deposits
+  {
+    const data = await safePoll<{
+      savingsVaultDeposits: { items: SavingsVaultDeposit[] };
+    }>(client, SAVINGS_VAULT_DEPOSITS, { watermark: watermarks.savingsVaultDeposit }, "savingsVaultDeposit");
+    if (!data) queryFailures++;
+
+    if (data?.savingsVaultDeposits.items.length) {
+      for (const e of data.savingsVaultDeposits.items) {
+        alerts.push({
+          silent: false,
+          eventType: "savingsVaultDeposit",
+          message: formatSavingsVaultDeposit(e, explorerUrl),
+        });
+      }
+      const last = data.savingsVaultDeposits.items[data.savingsVaultDeposits.items.length - 1];
+      watermarkUpdates.savingsVaultDeposit = last.timestamp;
+    }
+  }
+
+  // 18. Savings Vault Withdraws
+  {
+    const data = await safePoll<{
+      savingsVaultWithdraws: { items: SavingsVaultWithdraw[] };
+    }>(client, SAVINGS_VAULT_WITHDRAWS, { watermark: watermarks.savingsVaultWithdraw }, "savingsVaultWithdraw");
+    if (!data) queryFailures++;
+
+    if (data?.savingsVaultWithdraws.items.length) {
+      for (const e of data.savingsVaultWithdraws.items) {
+        alerts.push({
+          silent: false,
+          eventType: "savingsVaultWithdraw",
+          message: formatSavingsVaultWithdraw(e, explorerUrl),
+        });
+      }
+      const last = data.savingsVaultWithdraws.items[data.savingsVaultWithdraws.items.length - 1];
+      watermarkUpdates.savingsVaultWithdraw = last.timestamp;
+    }
+  }
+
+  // 19. Savings Vault Interest Claimed
+  {
+    const data = await safePoll<{
+      savingsVaultInterestClaimeds: { items: SavingsVaultInterestClaimed[] };
+    }>(client, SAVINGS_VAULT_INTEREST_CLAIMEDS, { watermark: watermarks.savingsVaultInterestClaimed }, "savingsVaultInterestClaimed");
+    if (!data) queryFailures++;
+
+    if (data?.savingsVaultInterestClaimeds.items.length) {
+      for (const e of data.savingsVaultInterestClaimeds.items) {
+        alerts.push({
+          silent: false,
+          eventType: "savingsVaultInterestClaimed",
+          message: formatSavingsVaultInterestClaimed(e, explorerUrl),
+        });
+      }
+      const last = data.savingsVaultInterestClaimeds.items[data.savingsVaultInterestClaimeds.items.length - 1];
+      watermarkUpdates.savingsVaultInterestClaimed = last.timestamp;
     }
   }
 
