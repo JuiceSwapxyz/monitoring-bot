@@ -21,7 +21,13 @@ export type EventType =
   | "challengeSucceeded"
   | "challengeAverted"
   | "savingsRateChanged"
-  | "feeRateChangesExecuted";
+  | "feeRateChangesExecuted"
+  | "mintingHubRateProposed"
+  | "mintingHubRateChanged"
+  | "savingsVaultDeposit"
+  | "savingsVaultWithdraw"
+  | "savingsVaultInterestClaimed"
+  | "positionPriceIncrease";
 
 // Watermark state
 export type Watermarks = Record<EventType, string>;
@@ -294,5 +300,74 @@ export interface ChallengeBidV2 {
   filledSize: string;
   acquiredCollateral: string;
   challengeSize: string;
+}
+
+// ---- MintingHub rate event shapes ----
+
+export interface MintingHubRateProposed {
+  id: string;
+  created: string;
+  blockheight: string;
+  txHash: string;
+  proposer: string;
+  nextRate: number;
+  nextChange: number;
+}
+
+export interface MintingHubRateChanged {
+  id: string;
+  created: string;
+  blockheight: string;
+  txHash: string;
+  approvedRate: number;
+}
+
+// ---- SavingsVault event shapes ----
+
+export interface SavingsVaultDeposit {
+  id: string;
+  sender: string;
+  owner: string;
+  assets: string;
+  shares: string;
+  blockheight: string;
+  timestamp: string;
+  txHash: string;
+}
+
+export interface SavingsVaultWithdraw {
+  id: string;
+  sender: string;
+  receiver: string;
+  owner: string;
+  assets: string;
+  shares: string;
+  blockheight: string;
+  timestamp: string;
+  txHash: string;
+}
+
+export interface MintingUpdateV2 {
+  id: string;
+  txHash: string;
+  created: string;
+  position: string;
+  owner: string;
+  isClone: boolean;
+  collateralSymbol: string;
+  collateralDecimals: number;
+  size: string;
+  price: string;
+  priceAdjusted: string;
+  cooldown: string;
+}
+
+export interface SavingsVaultInterestClaimed {
+  id: string;
+  interest: string;
+  totalClaimed: string;
+  blockheight: string;
+  timestamp: string;
+  txHash: string;
 }
 

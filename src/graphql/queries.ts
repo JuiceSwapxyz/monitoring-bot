@@ -487,3 +487,146 @@ export const CHALLENGE_BID_V2S_AVERTED = gql`
   }
 `;
 
+// ============================================================
+// Position price increase query
+// ============================================================
+
+export const MINTING_UPDATE_V2S_PRICE_INCREASE = gql`
+  query MintingUpdateV2sPriceIncrease($watermark: BigInt!) {
+    mintingUpdateV2s(
+      where: { created_gt: $watermark, priceAdjusted_gt: "0" }
+      orderBy: "created"
+      orderDirection: "asc"
+      limit: 50
+    ) {
+      items {
+        id
+        txHash
+        created
+        position
+        owner
+        isClone
+        collateralSymbol
+        collateralDecimals
+        size
+        price
+        priceAdjusted
+        cooldown
+      }
+    }
+  }
+`;
+
+// ============================================================
+// MintingHub rate queries
+// ============================================================
+
+export const MINTING_HUB_RATE_PROPOSEDS = gql`
+  query MintingHubRateProposeds($watermark: BigInt!) {
+    mintingHubRateProposeds(
+      where: { created_gt: $watermark }
+      orderBy: "created"
+      orderDirection: "asc"
+      limit: 50
+    ) {
+      items {
+        id
+        created
+        blockheight
+        txHash
+        proposer
+        nextRate
+        nextChange
+      }
+    }
+  }
+`;
+
+export const MINTING_HUB_RATE_CHANGEDS = gql`
+  query MintingHubRateChangeds($watermark: BigInt!) {
+    mintingHubRateChangeds(
+      where: { created_gt: $watermark }
+      orderBy: "created"
+      orderDirection: "asc"
+      limit: 50
+    ) {
+      items {
+        id
+        created
+        blockheight
+        txHash
+        approvedRate
+      }
+    }
+  }
+`;
+
+// ============================================================
+// SavingsVault queries
+// ============================================================
+
+export const SAVINGS_VAULT_DEPOSITS = gql`
+  query SavingsVaultDeposits($watermark: BigInt!) {
+    savingsVaultDeposits(
+      where: { timestamp_gt: $watermark }
+      orderBy: "timestamp"
+      orderDirection: "asc"
+      limit: 50
+    ) {
+      items {
+        id
+        sender
+        owner
+        assets
+        shares
+        blockheight
+        timestamp
+        txHash
+      }
+    }
+  }
+`;
+
+export const SAVINGS_VAULT_WITHDRAWS = gql`
+  query SavingsVaultWithdraws($watermark: BigInt!) {
+    savingsVaultWithdraws(
+      where: { timestamp_gt: $watermark }
+      orderBy: "timestamp"
+      orderDirection: "asc"
+      limit: 50
+    ) {
+      items {
+        id
+        sender
+        receiver
+        owner
+        assets
+        shares
+        blockheight
+        timestamp
+        txHash
+      }
+    }
+  }
+`;
+
+export const SAVINGS_VAULT_INTEREST_CLAIMEDS = gql`
+  query SavingsVaultInterestClaimeds($watermark: BigInt!) {
+    savingsVaultInterestClaimeds(
+      where: { timestamp_gt: $watermark }
+      orderBy: "timestamp"
+      orderDirection: "asc"
+      limit: 50
+    ) {
+      items {
+        id
+        interest
+        totalClaimed
+        blockheight
+        timestamp
+        txHash
+      }
+    }
+  }
+`;
+

@@ -1,6 +1,6 @@
 import type { Watermarks } from "./types.js";
 
-/** Returns a full Watermarks object with all 22 event types set to `ts` */
+/** Returns a full Watermarks object with all event types set to `ts` */
 export function makeWatermarks(ts = "0"): Watermarks {
   return {
     governorProposalCreated: ts,
@@ -25,6 +25,12 @@ export function makeWatermarks(ts = "0"): Watermarks {
     challengeAverted: ts,
     savingsRateChanged: ts,
     feeRateChangesExecuted: ts,
+    mintingHubRateProposed: ts,
+    mintingHubRateChanged: ts,
+    savingsVaultDeposit: ts,
+    savingsVaultWithdraw: ts,
+    savingsVaultInterestClaimed: ts,
+    positionPriceIncrease: ts,
   };
 }
 
