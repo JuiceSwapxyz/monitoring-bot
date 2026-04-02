@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from "vitest";
 import type { GraphQLClient } from "graphql-request";
-import type { Minter } from "../types.js";
+import type { Minter, MintingUpdateV2 } from "../types.js";
 import { makeWatermarks, emptyGraphQLResponse } from "../test-helpers.js";
-import { MINTERS_NEW } from "../graphql/queries.js";
+import { MINTERS_NEW, MINTING_UPDATE_V2S_PRICE_INCREASE } from "../graphql/queries.js";
 import { pollJuiceDollar } from "./juicedollar.js";
 
 // Stub all telegram formatters — we test formatting elsewhere
@@ -20,6 +20,12 @@ vi.mock("../formatters/telegram.js", () => ({
   formatChallengeStarted: () => "challengeStarted",
   formatChallengeSucceeded: () => "challengeSucceeded",
   formatChallengeAverted: () => "challengeAverted",
+  formatPositionPriceIncrease: () => "positionPriceIncrease",
+  formatMintingHubRateProposed: () => "mintingHubRateProposed",
+  formatMintingHubRateChanged: () => "mintingHubRateChanged",
+  formatSavingsVaultDeposit: () => "savingsVaultDeposit",
+  formatSavingsVaultWithdraw: () => "savingsVaultWithdraw",
+  formatSavingsVaultInterestClaimed: () => "savingsVaultInterestClaimed",
 }));
 
 function makeMinter(overrides: Partial<Minter> = {}): Minter {
@@ -150,5 +156,89 @@ describe("pollJuiceDollar — general patterns", () => {
     expect(result.alerts).toEqual([]);
     expect(result.watermarkUpdates).toEqual({});
     expect(result.queryFailures).toBe(19);
+  });
+});
+
+function makeMintingUpdate(overrides: Partial<MintingUpdateV2> = {}): MintingUpdateV2 {
+  return {
+    id: "0xPOS-2",
+    txHash: "0xabc",
+    created: "1000",
+    position: "0xPOS",
+    owner: "0xOWNER",
+    isClone: false,
+    collateralSymbol: "cBTC",
+    collateralDecimals: 18,
+    size: "1000000000000000000",
+    price: "50000000000000000000000",
+    priceAdjusted: "100000000000000000000",
+    cooldown: "2000",
+    ...overrides,
+  };
+}
+
+describe("pollJuiceDollar — position price increase filter", () => {
+  it("skips events with id ending in '-1' (initial position opening)", async () => {
+    const update = makeMintingUpdate({ id: "0xPOS-1", cooldown: "2000", created: "1000" });
+    const client = makeMockClient((query) => {
+      if (query === MINTING_UPDATE_V2S_PRICE_INCREASE) {
+        return { mintingUpdateV2s: { items: [update] } };
+      }
+      return emptyGraphQLResponse();
+    });
+
+    const result = await pollJuiceDollar(client, makeWatermarks(), EXPLORER);
+    const priceAlerts = result.alerts.filter((a) => a.eventType === "positionPriceIncrease");
+    expect(priceAlerts).toHaveLength(0);
+    // Watermark still advances
+    expect(result.watermarkUpdates.positionPriceIncrease).toBe("1000");
+  });
+
+  it("skips events where cooldown <= created (reference-validated, no governance review)", async () => {
+    const update = makeMintingUpdate({ id: "0xPOS-2", cooldown: "500", created: "1000" });
+    const client = makeMockClient((query) => {
+      if (query === MINTING_UPDATE_V2S_PRICE_INCREASE) {
+        return { mintingUpdateV2s: { items: [update] } };
+      }
+      return emptyGraphQLResponse();
+    });
+
+    const result = await pollJuiceDollar(client, makeWatermarks(), EXPLORER);
+    const priceAlerts = result.alerts.filter((a) => a.eventType === "positionPriceIncrease");
+    expect(priceAlerts).toHaveLength(0);
+    expect(result.watermarkUpdates.positionPriceIncrease).toBe("1000");
+  });
+
+  it("alerts when cooldown > created and id does not end in '-1'", async () => {
+    const update = makeMintingUpdate({ id: "0xPOS-2", cooldown: "2000", created: "1000" });
+    const client = makeMockClient((query) => {
+      if (query === MINTING_UPDATE_V2S_PRICE_INCREASE) {
+        return { mintingUpdateV2s: { items: [update] } };
+      }
+      return emptyGraphQLResponse();
+    });
+
+    const result = await pollJuiceDollar(client, makeWatermarks(), EXPLORER);
+    const priceAlerts = result.alerts.filter((a) => a.eventType === "positionPriceIncrease");
+    expect(priceAlerts).toHaveLength(1);
+    expect(priceAlerts[0].silent).toBe(false);
+  });
+
+  it("filters correctly in mix: 1 opening + 1 reference-validated + 1 real increase → 1 alert", async () => {
+    const opening = makeMintingUpdate({ id: "0xPOS-1", cooldown: "2000", created: "100" });
+    const refValidated = makeMintingUpdate({ id: "0xPOS-2", cooldown: "50", created: "200" });
+    const realIncrease = makeMintingUpdate({ id: "0xPOS-3", cooldown: "500", created: "300" });
+    const client = makeMockClient((query) => {
+      if (query === MINTING_UPDATE_V2S_PRICE_INCREASE) {
+        return { mintingUpdateV2s: { items: [opening, refValidated, realIncrease] } };
+      }
+      return emptyGraphQLResponse();
+    });
+
+    const result = await pollJuiceDollar(client, makeWatermarks(), EXPLORER);
+    const priceAlerts = result.alerts.filter((a) => a.eventType === "positionPriceIncrease");
+    expect(priceAlerts).toHaveLength(1);
+    // Watermark advances to last item
+    expect(result.watermarkUpdates.positionPriceIncrease).toBe("300");
   });
 });
